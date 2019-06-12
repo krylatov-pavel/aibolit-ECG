@@ -1,0 +1,74 @@
+{
+    "model": {
+        "name": "models.arythmia_cnn_model_v5.ArythmiaCNNModelv5",
+        "experiment": "N_B_SBR_AFIB_model_stability_14",
+        "hparams": {
+            "class_num": 4,
+            "learning_rate": 0.001444422940073491,
+            "num_epochs": 4000,
+            "conv_layers": 8,
+            "filters_num": 64,
+            "filters_step": 64,
+            "kernel_size": 7,
+            "pool_size": 3,
+            "use_batch_norm": true,
+            "dense_layers": 1,
+            "dense_units": 512,
+            "use_dropout": true,
+            "dropout_rate": 0.5256155474817464
+        }
+    },
+    "dataset" : {
+        "provider" : "datasets.MIT.arrhythmia.wave_examples_provider.WaveExamplesProvider",
+        "params": {
+            "db_name": "mitdb",
+            "experiment": "4-fold_(N,B,SBR,AFIB)_equalize_AFIB_0.25overlap",
+            "bypass_cache": false,
+            "slice_window": 1440,
+            "slice_overlap": 0.25,
+            "rhythm_filter": [{
+                "name": "N",
+                "rhythm": "(N",
+                "beats": [".", "N"],
+                "use_augmentation": false
+            }, {
+                "name": "B",
+                "rhythm": "(B",
+                "beats": [],
+                "use_augmentation": true
+            },{
+                "name": "SBR",
+                "rhythm": "(SBR",
+                "beats": [],
+                "use_augmentation": true,
+                "allow_spread": true
+            }, {
+                "name": "AFIB",
+                "rhythm": "(AFIB",
+                "beats": [],
+                "use_augmentation": false
+            }],
+            "label_map": {
+                "N": 0,
+                "B": 1,
+                "SBR": 2,
+                "AFIB": 3
+            },
+            "equalize_classes": {
+                "N": true,
+                "B": false,
+                "SBR": false,
+                "AFIB": true
+            },
+            "rescale": false,
+            "normalize": true,      
+            "rhythm_map": {},
+            "split_ratio": [0.25, 0.25, 0.25, 0.25],
+            "test_set_size": 0.0,
+            "train_batch_size": 32,
+            "eval_batch_size": 100,
+            "include_augmented": false
+        }
+    },
+    "max_to_keep": 5
+}

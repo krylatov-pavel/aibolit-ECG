@@ -1,13 +1,13 @@
 import re
-from datasets.MIT.utils.data_structures import SliceMeta
+from datasets.utils.data_structures import SliceMeta
 
 class NameGenerator(object):
     def __init__(self, file_extension):
         self.file_extension = file_extension
 
-    def generate_name(self, index, rythm, record, start, end):
+    def generate_name(self, index, rhythm, record, start, end):
         template = "{}_{}_{}_{}-{}{}"
-        return template.format(index, rythm, record, start, end, self.file_extension)
+        return template.format(index, rhythm, record, start, end, self.file_extension)
 
     def generate_aug_name(self, original, aug_name):
         return "{}_{}{}".format(
@@ -17,12 +17,12 @@ class NameGenerator(object):
         )
 
     def get_metadata(self, fname):
-        regex = "^\d+_(?P<rythm>[(\w]+)_(?P<record>[\.\d]+)_(?P<start>\d+)-(?P<end>\d+)"
+        regex = "^\d+_(?P<rhythm>[(\w]+)_(?P<record>[\.\d]+)_(?P<start>\d+)-(?P<end>\d+)"
         m = re.match(regex, fname)
         if m:
             return SliceMeta(
                 record=m.group("record"),
-                rythm=m.group("rythm"),
+                rhythm=m.group("rhythm"),
                 start=m.group('start'),
                 end=m.group('end')
             )

@@ -1,16 +1,14 @@
-import tensorflow as tf
 import numpy as np
 import pandas as pd
 import os
-from datasets.MIT.utils.name_generator import NameGenerator
-from datasets.base_dataset import BaseDataset
+from datasets.utils.name_generator import NameGenerator
 from utils.helpers import unzip_list
 
 TRAIN = tf.estimator.ModeKeys.TRAIN
 EVAL = tf.estimator.ModeKeys.EVAL
 PREDICT = tf.estimator.ModeKeys.PREDICT
 
-class BaseMITDataset(BaseDataset):
+class BaseDataset():
     def __init__(self, params, examples_provider):
         self.train_batch_size = params["train_batch_size"]
         self.eval_batch_size = params["eval_batch_size"]
@@ -70,7 +68,7 @@ class BaseMITDataset(BaseDataset):
             id_template = "{}_{}"
             fold_dir = os.path.join(self.examples_provider.examples_dir, str(i))
             examples = _load_metadata(fold_dir, "augmented")
-            sets[i] = set((id_template.format(e.rythm, e.record) for e in examples))
+            sets[i] = set((id_template.format(e.rhythm, e.record) for e in examples))
 
         for i in range(k):
             for j in range(i + 1, k):

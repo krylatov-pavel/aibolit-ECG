@@ -1,7 +1,7 @@
 import os
 from utils.dirs import clear_dir, create_dirs
-from datasets.MIT.utils.name_generator import NameGenerator
-from datasets.MIT.utils.data_structures import Example
+from datasets.utils.name_generator import NameGenerator
+from datasets.utils.data_structures import Example
 
 class BaseFileProvider(object):
     def __init__(self, extension):
@@ -30,8 +30,8 @@ class BaseFileProvider(object):
         """Converts slices to proper file format and saves them to disc
         Args:
             slices: 2d list of slices,
-            elements are namedtuples, (Index, rythm, start, end, signal), e.g:
-            [[(rythm="(N", start=10, end=760, signal=[0.222, 0.225, ...]), (...)], ...]
+            elements are namedtuples, (Index, rhythm, start, end, signal), e.g:
+            [[(rhythm="(N", start=10, end=760, signal=[0.222, 0.225, ...]), (...)], ...]
             directory: directory to save files
             params: dictionalry, passed to _build_save_file_fn method
         Returns:
@@ -47,7 +47,7 @@ class BaseFileProvider(object):
         for s in slices:
             fname = self.name_generator.generate_name(
                 index=s.Index,
-                rythm=s.rythm,
+                rhythm=s.rhythm,
                 record=s.record,
                 start=s.start,
                 end=s.end
@@ -61,7 +61,7 @@ class BaseFileProvider(object):
         """Loads examples from directory
         Returns:
             list of Example namedtuples (data, label, name),
-            label denotes rythm type, eg "(N"
+            label denotes rhythm type, eg "(N"
             name denotes file name
         """
         if not os.path.exists(directory):
@@ -77,7 +77,7 @@ class BaseFileProvider(object):
                 x = self._read_file(fpath)
                 metadata = self.name_generator.get_metadata(fname)
                 if metadata:
-                    labels[i] = metadata.rythm
+                    labels[i] = metadata.rhythm
                     data[i] = x
                 else:
                     print("Skipped file {}, can't parse name".format(fpath))

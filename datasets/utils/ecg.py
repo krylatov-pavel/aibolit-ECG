@@ -1,7 +1,7 @@
 import numpy as np
 import random
 import scipy.interpolate
-from datasets.MIT.utils.data_structures import Slice
+from datasets.utils.data_structures import Slice
 
 class ECG(object):
     def __init__(self, name, signal, labels, timecodes):
@@ -9,39 +9,39 @@ class ECG(object):
         Args:
             name: record name
             signal: 1d list of physical signal values, e.g [0.233, 0.217, ...]
-            labels: 1d list of heart rythm labels, e.g ["(N\x00", "(VT\x00", "(SIN\x00", ...]
-            timecodes: 1d list of timecodes corresponding to heart rythm labels, each time code
-            denotes starting point of related heart rythm sequence in frames, e.g [34, 2300, 7500, ...]     
+            labels: 1d list of heart rhythm labels, e.g ["(N\x00", "(VT\x00", "(SIN\x00", ...]
+            timecodes: 1d list of timecodes corresponding to heart rhythm labels, each time code
+            denotes starting point of related heart rhythm sequence in frames, e.g [34, 2300, 7500, ...]     
         """
         self.name = name
         self.signal = signal
         self.labels = [l.rstrip("\x00") for l in labels] 
         self.timecodes = timecodes
     
-    def get_slices(self, slice_window, rythm_filter, rythm_map, reverse=False, resample=False):
-        """Cuts heart rythm sequences into a set of fixed-length slices
+    def get_slices(self, slice_window, rhythm_filter, rhythm_map, reverse=False, resample=False):
+        """Cuts heart rhythm sequences into a set of fixed-length slices
         Args:
             slice_window: int, slice length in frames
-            rythm_filter: list of heart rythm types that needs to be included in slices,
+            rhythm_filter: list of heart rhythm types that needs to be included in slices,
             e.g ["(ASYS", "(VT", ...]
-            rythm_map: in case some labels have the same meaning, like "(N" and "(NSR" map them to
+            rhythm_map: in case some labels have the same meaning, like "(N" and "(NSR" map them to
             the same label for convinience. Dictionary, e.g:
             {
                 "(NSR)": "(N)",
                 ...
             }
         Returns:
-            list of Slice, each slice is a named tuple ("record", "rythm", "start", "end", "signal"), e.g:
+            list of Slice, each slice is a named tuple ("record", "rhythm", "start", "end", "signal"), e.g:
             [("(N", 32, 1001), ...]
         """
 
         slices = []
         
         for label, start, end in zip(self.labels, self.timecodes, np.append(self.timecodes[1:], len(self.signal))):
-            if label in rythm_map:
-                label = rythm_map[label]
+            if label in rhythm_map:
+                label = rhythm_map[label]
             
-            if label in rythm_filter:
+            if label in rhythm_filter:
                 if not resample:
                     slices.extend(self._cut_slices(slice_window, label, start, end, reverse))
                 else:
@@ -50,7 +50,7 @@ class ECG(object):
         return slices
 
     def _cut_slices(self, slice_window, label, start, end, reverse=False, overlap=0):
-        """ Cust single heart rythm sequence into fixed-length slices
+        """ Cust single heart rhythm sequence into fixed-length slices
         Args:
             start: sequence start position, inclusive
             end: sequence end position, exclusive
@@ -72,7 +72,7 @@ class ECG(object):
 
             slices[i] = Slice(
                 record=self.name,
-                rythm=label,
+                rhythm=label,
                 start=start_pos,
                 end=end_pos,
                 signal=signal)
@@ -104,7 +104,7 @@ class ECG(object):
 
             slices.append(Slice(
                 record=self.name,
-                rythm=label,
+                rhythm=label,
                 start=start_pos,
                 end=end_pos,
                 signal=signal

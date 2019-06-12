@@ -3,11 +3,11 @@ import math
 import numpy as np
 import pandas as pd
 import random
-from datasets.MIT.base.base_examples_provider import BaseExamplesProvider
-from datasets.MIT.providers.database_provider import DatabaseProvider
-from datasets.MIT.providers.wavedata_provider import WavedataProvider
-from datasets.Arythmia.arythmia_ecg import ArythmiaECG
-from datasets.MIT.utils.data_structures import Example, Slice
+from datasets.base.base_examples_provider import BaseExamplesProvider
+from datasets.MIT.common.database_provider import DatabaseProvider
+from datasets.MIT.common.wavedata_provider import WavedataProvider
+from datasets.MIT.arrhythmia.arrhythmia_ecg import ArrhythmiaECG
+from datasets.utils.data_structures import Example, Slice
 from utils.helpers import flatten_list, unzip_list, rescale, normalize
 from utils.dirs import create_dirs
 
@@ -20,16 +20,18 @@ class WaveExamplesProvider(BaseExamplesProvider):
         self.normalize = params.normalize
         self.slice_overlap = params["slice_overlap"]
 
+        self._ecgs = None
+
     def _build_examples(self):
         ecgs = self._get_ECGs()
 
-        slices = [e.get_slices(self.slice_window, self.rythm_filter, self.slice_overlap) for e in ecgs]
+        slices = [e.get_slices(self.slice_window, self.rhythm_filter, self.slice_overlap) for e in ecgs]
         slices = flatten_list(slices)
 
-        for f in self.rythm_filter:
+        for f in self.rhythm_filter:
             if hasattr(f, "allow_spread") and f.allow_spread:
-                not_class = [s for s in slices if s.rythm != f.name]
-                spreaded_class = self._spread_slices([s for s in slices if s.rythm == f.name], len(self.split_ratio))
+                not_class = [s for s in slices if s.rhythm != f.name]
+                spreaded_class = self._spread_slices([s for s in slices if s.rhythm == f.name], len(self.split_ratio))
                 slices = not_class + spreaded_class
 
         splits = self._split_slices(slices)
@@ -91,7 +93,7 @@ class WaveExamplesProvider(BaseExamplesProvider):
         if not self._ecgs:
             records = DatabaseProvider(self.db_name).get_records()
 
-            self._ecgs = [ArythmiaECG(name=r.signal.record_name,
+            self._ecgs = [ArrhythmiaECG(name=r.signal.record_name,
                 signal=np.reshape(r.signal.p_signal, [-1]),
                 labels=r.annotation.aux_note,
                 beats=r.annotation.symbol,
@@ -105,7 +107,7 @@ class WaveExamplesProvider(BaseExamplesProvider):
         
         df = pd.DataFrame(examples)  
 
-        orig_distribution = df.rythm.value_counts().sort_values().iteritems()
+        orig_distribution = df.rhythm.value_counts().sort_values().iteritems()
         orig_distribution = list(orig_distribution)
 
         if equalizer:
@@ -113,11 +115,11 @@ class WaveExamplesProvider(BaseExamplesProvider):
         else:
             min_class, min_count = orig_distribution[0]
 
-        min_count += len([e for e in aug_examples if e.rythm == min_class])
+        min_count += len([e for e in aug_examples if e.rhythm == min_class])
 
         for class_name, class_count in orig_distribution:
-            class_examples = [e for e in examples if e.rythm == class_name]
-            aug_class_examples = [e for e in aug_examples if e.rythm == class_name]
+            class_examples = [e for e in examples if e.rhythm == class_name]
+            aug_class_examples = [e for e in aug_examples if e.rhythm == class_name]
 
             if equalizer and not equalizer[class_name]:
                 take = len(class_examples)
@@ -167,7 +169,7 @@ class WaveExamplesProvider(BaseExamplesProvider):
                 end = (i + 1) * slices_in_fold
                 if end > len(group):
                     end = len(group)
-                spreaded_slices = [Slice("{}.{}".format(record, i), s.rythm, s.start, s.end, s.signal) for s in group_slices[start:end]]
+                spreaded_slices = [Slice("{}.{}".format(record, i), s.rhythm, s.start, s.end, s.signal) for s in group_slices[start:end]]
                 spread.extend(spreaded_slices)
 
         return spread
