@@ -18,7 +18,7 @@ class WavedataProvider(BaseFileProvider):
             fpath = os.path.join(directory, fname)
             with open(fpath, "w", newline='') as f:
                 wr = csv.writer(f)
-                wr.writerows(np.expand_dims(signal, axis=1))
+                wr.writerows(np.expand_dims(signal, axis=0))
 
         def dispose_fn():
             return None

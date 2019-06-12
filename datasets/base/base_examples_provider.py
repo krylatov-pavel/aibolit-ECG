@@ -15,8 +15,9 @@ class BaseExamplesProvider(object):
         self.rhythm_map = params["rhythm_map"]
         self.rhythm_filter = params["rhythm_filter"]
         self.split_ratio = params["split_ratio"]
+        self.label_map = params["label_map"]
 
-        self._examples = None
+        self.__examples = None
 
     #abstract members
     def _build_examples(self):
@@ -47,31 +48,26 @@ class BaseExamplesProvider(object):
         else:
             print("examples for current configuration already exist")
 
-    def get(self, fold_nums, include_augmented):
-        """Gets examples set from splits numbers list
-        Args:
-            fold_nums: list of int, numbers of fold_nums.
-            In default scenario [0] for TRAIN set, [1] for EVAL
-            In k-split validation scenario, for example, for 5-split validation it could be [0, 1, 2, 3] for TRAIN
-            and [4] for EVAL
-            include_augmented: bool. True for TRAIN, False for EVAL
-        Returns:
-            list of Example named tuple (x, y)
-        """
-        if not self._examples:
-            if self.examples_exists:
-                print("loading examples...")
-                self._examples = self._load_examples()
-                print("loading examples complete")
-            else:
-                raise ValueError("Examples not exist")
+    def len(self, fold_nums, include_augmented=False):
+        num = 0
+        examples = self.__get_examples()
+        groups = ["original"] + ["augmented"] * include_augmented
+        for i in fold_nums:
+            for g in groups:
+                num += len(examples[i][g])
+        return num
 
-        examples = [self._examples[i]["original"] for i in fold_nums]
-        if include_augmented:
-            examples_aug = [self._examples[i]["augmented"] for i in fold_nums]
-            examples += examples_aug
-        
-        return flatten_list(examples)
+    def get_example(self, index, fold_nums, include_augmented=False):
+        examples = self.__get_examples()
+        groups = ["original"] + ["augmented"] * include_augmented
+        for i in fold_nums:
+            for g in groups:
+                group_length = len(examples[i][g])
+                if index <= group_length - 1:
+                    return (examples[i][g][index].x, self.label_map[examples[i][g][index].y])
+                else:
+                    index -= group_length
+        raise ValueError("Index is out of range")
 
     @property
     def examples_dir(self):
@@ -184,3 +180,14 @@ class BaseExamplesProvider(object):
             split_map[rhythm] = [[s[0] for s in subgroup] for subgroup in slices_splitted]
         
         return split_map
+
+    def __get_examples(self):
+        if not self.__examples:
+            if self.examples_exists:
+                print("loading examples...")
+                self.__examples = self._load_examples()
+                print("loading examples complete")
+            else:
+                raise ValueError("Examples not exist")
+
+        return self.__examples

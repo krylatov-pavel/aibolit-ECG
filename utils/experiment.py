@@ -1,26 +1,37 @@
-import tensorflow as tf
 import os
-import numpy as np
-from utils.helpers import get_class, avg_f1_score
-from hooks.log_metrics import LogMetricsHook, plot_metrics
+import torch
+from torch.utils import data
+import torch.optim as optim
+import torch.nn as nn
+from utils.helpers import get_class
+from datasets.base.dataset import Dataset
+
+TRAIN = "train"
+EVAL = "eval"
 
 class Experiment():
     def __init__(self, config, model_dir):
-        self.config = config
-        self.model_dir = model_dir
-        self.k = len(self.config.dataset.params.split_ratio)
+        self._config = config
+        self._model_dir = model_dir
+        self._k = len(config.dataset.params.split_ratio)
+        self._examples_provider = get_class(config.dataset.provider)(config.dataset.params)
 
     def run(self):
+        self._train_batch_size = self._config.model.hparams["train_batch_size"]
+        self._eval_batch_size = self._config.model.hparams["eval_batch_size"]
+        self._num_epochs = self._config.model.hparams["num_epochs"]
+        self._learning_rate = self._config.model.hparams["learning_rate"]
+
         #regular experiment
-        if self.k == 2:
-            self._train_model(self.model_dir)
+        if self._k == 2:
+            self._train_model(self._model_dir)
 
         #k-fold crossvalidation 
-        elif self.k > 2:
-            for i in range(self.k):
-                directory = os.path.join(self.model_dir, "fold_{}".format(i))
+        elif self._k > 2:
+            for i in range(self._k):
+                directory = os.path.join(self._model_dir, "fold_{}".format(i))
                 self._train_model(directory, i)
-            plot_metrics(self.model_dir)
+            #plot_metrics(self._model_dir)
 
     def evaluate_accuracy(self, checkpoint_num=None):
         cm = self.confusion_matrix(checkpoint_num)
@@ -32,18 +43,19 @@ class Experiment():
         print("Evaluated accuracy: ", accuracy)
 
     def confusion_matrix(self, checkpoint_num=None):
-        if self.k == 2:
-            cm = self._evaluate_model(self.config, self.model_dir, checkpoint_num=checkpoint_num)
-        if self.k > 2:
-            cm = np.zeros((self.config.model.hparams.class_num, self.config.model.hparams.class_num))
-            for i in range(self.k):
-                directory = os.path.join(self.model_dir, "fold_{}".format(i))
-                cm += self._evaluate_model(self.config, directory, i, checkpoint_num=checkpoint_num)
+        if self._k == 2:
+            cm = self._evaluate_model(self._config, self._model_dir, checkpoint_num=checkpoint_num)
+        if self._k > 2:
+            cm = np.zeros((self._config.model.hparams.class_num, self._config.model.hparams.class_num))
+            for i in range(self._k):
+                directory = os.path.join(self._model_dir, "fold_{}".format(i))
+                cm += self._evaluate_model(self._config, directory, i, checkpoint_num=checkpoint_num)
         
         return cm
 
     def _evaluate_model(self, config, model_dir, fold_num=None, checkpoint_num=None):
             model = get_class(config.model.name)(config.model.hparams, config.dataset.params)
+            
             dataset = get_class(config.dataset.name)(config.dataset.params)
 
             x, labels = dataset.get_eval_examples(fold_num)
@@ -67,68 +79,60 @@ class Experiment():
 
             return cm
 
-    def validate_dataset(self):
-        dataset = get_class(self.config.dataset.name)(self.config.dataset.params)
-        if hasattr(dataset, "validate"):
-            dataset.validate()
-        else:
-            print("This dataset object not support validation option")
-    
     def _train_model(self, model_dir, fold_num=None):
-        model = get_class(self.config.model.name)(self.config.model.hparams, self.config.dataset.params)
-        dataset = get_class(self.config.dataset.name)(self.config.dataset.params)
-
-        if hasattr(dataset, "dataset_stats"):
-            dataset.dataset_stats(tf.estimator.ModeKeys.TRAIN, fold_num)
-            dataset.dataset_stats(tf.estimator.ModeKeys.EVAL, fold_num)
-
-        run_config = tf.estimator.RunConfig(
-            model_dir=model_dir,
-            save_summary_steps=100,
-            log_step_count_steps=100,
-            save_checkpoints_steps=250, #evaluation occurs after checkpoint save
-            keep_checkpoint_max=10 
-        )
-
-        classifier = tf.estimator.Estimator(
-            model_fn=model.build_model_fn(),
-            model_dir=model_dir,
-            config=run_config
-        )
-
-        train_spec = tf.estimator.TrainSpec(
-            input_fn=dataset.get_input_fn(tf.estimator.ModeKeys.TRAIN, fold_num),
-            max_steps=self.config.model.hparams.num_epochs
-        )
-
-        hooks = None
-        if fold_num != None:
-            metrics = {
-                "accuracy": "accuracy/value:0"
-            }
-
-            for class_name, class_label in self.config.dataset.params["label_map"].items():
-                metrics["accuracy_{}".format(class_name)] = "accuracy_{}/truediv:0".format(class_label)
-
-            hooks = [LogMetricsHook(
-                metrics=metrics, 
-                directory=os.path.dirname(model_dir),
-                model_name=fold_num
-            )]
-
-        eval_spec = tf.estimator.EvalSpec(
-            input_fn=dataset.get_input_fn(tf.estimator.ModeKeys.EVAL, fold_num),
-            steps=20,
-            start_delay_secs=1,  # Start evaluating after 1 sec.
-            throttle_secs=1,
-            hooks=hooks
-        )
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         
-        tf.logging.set_verbosity(tf.logging.ERROR)
-        tf.estimator.train_and_evaluate(classifier, train_spec, eval_spec)
+        model = get_class(self._config.model.name)(self._config)
+        model.to(device)
+        
+        optimizer = optim.Adam(model.parameters(), lr = self._learning_rate)
+        loss_fn = nn.CrossEntropyLoss()
+        
+        train_set = Dataset(self._examples_provider, self._get_fold_nums(TRAIN, fold_num))
+        train_loader = data.DataLoader(train_set, batch_size=self._train_batch_size, shuffle=True)
 
-        if model.description:
-            with open(os.path.join(model_dir, "network.txt"), "w") as f:
-                f.write(model.description)
-    
+        for epoch in range(self._num_epochs):
+            running_loss = 0.0
+            for i, batch in enumerate(train_loader):
+                inputs, labels = batch[0].to(device), batch[1].to(device)
+
+                optimizer.zero_grad()
+                predictions = model(inputs)
+                loss = loss_fn(predictions, labels)
+                loss.backward()
+                optimizer.step()
+
+                running_loss += loss
+
+                if i % 20 == 19:
+                    print("epoch {}\titeration {}\tloss {:.3f}".format(epoch + 1, i + 1, running_loss / 20))
+                    running_loss = 0.0
+
+        print("training complete\nevaluating accuracy...")
+
+        model.to("cpu")
+        model.eval()
+
+        eval_set = Dataset(self._examples_provider, self._get_fold_nums(EVAL, fold_num))
+        eval_loader = data.DataLoader(eval_set, batch_size=self._eval_batch_size, shuffle=True, num_workers=2)
+
+        tp = 0
+        total = 0
+        for inputs, labels in eval_loader:
+            with torch.no_grad():
+                predictions = model(inputs)
+                _, predictions = torch.max(predictions, 1)
+                total += len(labels)
+                tp += (predictions == labels).sum().item()
+
+        print("accuracy {:.3f}".format((tp / total) * 100.0))
         return
+
+    def _get_fold_nums(self, mode, fold_num=None):
+        folds = list(range(self._k))
+        eval_fold = fold_num if fold_num != None else 1
+
+        if mode == TRAIN:
+            return [f for f in folds if  f != eval_fold]
+        else:
+            return [eval_fold]
