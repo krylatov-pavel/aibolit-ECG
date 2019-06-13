@@ -1,9 +1,7 @@
 import os
-import torch
-from torch.utils import data
-import torch.optim as optim
-import torch.nn as nn
+from utils.dirs import create_dirs
 from utils.helpers import get_class
+from training.model import Model
 from datasets.base.dataset import Dataset
 
 TRAIN = "train"
@@ -80,53 +78,19 @@ class Experiment():
             return cm
 
     def _train_model(self, model_dir, fold_num=None):
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        
-        model = get_class(self._config.model.name)(self._config)
-        model.to(device)
-        
-        optimizer = optim.Adam(model.parameters(), lr = self._learning_rate)
-        loss_fn = nn.CrossEntropyLoss()
-        
+        create_dirs([model_dir])
+
+        net = get_class(self._config.model.name)(self._config)
         train_set = Dataset(self._examples_provider, self._get_fold_nums(TRAIN, fold_num))
-        train_loader = data.DataLoader(train_set, batch_size=self._train_batch_size, shuffle=True)
+        optimizer_params = {
+            "lr": self._learning_rate
+        }
 
-        for epoch in range(self._num_epochs):
-            running_loss = 0.0
-            for i, batch in enumerate(train_loader):
-                inputs, labels = batch[0].to(device), batch[1].to(device)
-
-                optimizer.zero_grad()
-                predictions = model(inputs)
-                loss = loss_fn(predictions, labels)
-                loss.backward()
-                optimizer.step()
-
-                running_loss += loss
-
-                if i % 20 == 19:
-                    print("epoch {}\titeration {}\tloss {:.3f}".format(epoch + 1, i + 1, running_loss / 20))
-                    running_loss = 0.0
-
-        print("training complete\nevaluating accuracy...")
-
-        model.to("cpu")
-        model.eval()
+        model = Model(net, model_dir)
+        model.train(self._num_epochs, train_set, optimizer_params)
 
         eval_set = Dataset(self._examples_provider, self._get_fold_nums(EVAL, fold_num))
-        eval_loader = data.DataLoader(eval_set, batch_size=self._eval_batch_size, shuffle=True, num_workers=2)
-
-        tp = 0
-        total = 0
-        for inputs, labels in eval_loader:
-            with torch.no_grad():
-                predictions = model(inputs)
-                _, predictions = torch.max(predictions, 1)
-                total += len(labels)
-                tp += (predictions == labels).sum().item()
-
-        print("accuracy {:.3f}".format((tp / total) * 100.0))
-        return
+        model.evaluate(eval_set)
 
     def _get_fold_nums(self, mode, fold_num=None):
         folds = list(range(self._k))

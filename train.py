@@ -1,6 +1,6 @@
 import argparse
 from utils.config import Config
-from utils.experiment import Experiment
+from training.experiment import Experiment
 
 def main():
     parser = argparse.ArgumentParser()
