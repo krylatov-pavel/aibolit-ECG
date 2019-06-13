@@ -58,6 +58,7 @@ class FileLogger(object):
         metrics = [(m, c) for m, c in zip(self._metrics, colors)]
 
         plots = []
+        legends = []
 
         fig = plt.figure()
         plt.xlabel("steps")
@@ -67,7 +68,6 @@ class FileLogger(object):
         y_pos = np.arange(11) * 0.1
         plt.yticks(y_pos, [str(int(percent * 100)) for percent in y_pos])
         
-        legend = []
         for metric, color in metrics:
             m_mean = steps[metric].agg(np.mean)
             x, y = unzip_list(m_mean.iteritems())
@@ -79,14 +79,15 @@ class FileLogger(object):
                 max_accuracy = y[idx_max]
                 alpha = 1
                 plt.text(0.05, 0.05, "max accuracy {:.3f} on step {}".format(max_accuracy, step))
-                legend.append(metric)
+                label = metric
             else:
-                legend.append(class_map[int(metric)])
+                label = class_map[int(metric)]
 
-            plot, = plt.plot(x, y, color, alpha=alpha, label=metric)
+            plot, = plt.plot(x, y, color, alpha=alpha, label=label)
             plots.append(plot)
+            legends.append(label)
 
-        plt.legend(plots, legend)
+        plt.legend(plots, legends)
         plt.legend(loc="upper left")
         plt.grid(axis="y")
 
