@@ -13,6 +13,7 @@ def main():
         
         experiment = Experiment(config.settings, config.model_dir)
         experiment.run()
+        experiment.plot_metrics()
     else:
         print("configuration file name is required. use -h for help")
 

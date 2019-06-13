@@ -5,18 +5,21 @@ from torch.utils import data
 import torch.optim as optim
 import torch.nn as nn
 from training.metrics.running_avg import RunningAvg
+from training.metrics.file_logger import FileLogger
+from training.metrics.confusion_matrix import ConfusionMatrix
 
 class Model(object):
-    def __init__(self, net, model_dir):
+    def __init__(self, net, model_dir, class_num):
         self._net = net
         self._model_dir = model_dir
+        self._class_num = class_num
 
         self._ckpt_extension = ".tar"
         self._ckpt_name_tmpl = "model.ckpt-{}" + self._ckpt_extension
-        
-    def train(self, num_epochs, train_set, optimizer_params):
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+        self._device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        
+    def train_and_evaluate(self, num_epochs, train_set, optimizer_params, eval_set):
         if self.last_checkpoint < num_epochs:
             optimizer = optim.Adam(self._net.parameters(), **optimizer_params)
             loss_fn = nn.CrossEntropyLoss()
@@ -28,14 +31,15 @@ class Model(object):
             else:
                 curr_epoch = 0
 
-            self._net.to(device)
+            self._net.to(self._device)
 
             train_loader = data.DataLoader(train_set, batch_size=32, shuffle=True)
 
             for epoch in range(curr_epoch, num_epochs):
+                self._net.train()
                 loss_acm.next_epoch()
                 for batch in train_loader:
-                    inputs, labels = batch[0].to(device), batch[1].to(device)
+                    inputs, labels = batch[0].to(self._device), batch[1].to(self._device)
 
                     optimizer.zero_grad()
                     predictions = self._net(inputs)
@@ -45,33 +49,37 @@ class Model(object):
 
                     loss_acm.next_iteration(loss)
                 
-                print("epoch {}\tloss {:.3f}".format(epoch + 1, loss_acm.avg))
+                if epoch % 5 == 4:
+                    self._save_checkpoint(optimizer, epoch)
+                    self._evaluate(eval_set, epoch)
+
+            if epoch % 5 != 4:
                 self._save_checkpoint(optimizer, epoch)
+                self._evaluate(eval_set, epoch)
 
             print("training complete")
         else:
             print("model have already trained for num_epochs parameter")
 
-    def evaluate(self, eval_set, checkpoint=None):
-        if self.last_checkpoint > 0:
-            self._load_checkpoint(checkpoint or self.last_checkpoint, None)
-            self._net.to("cpu")
-            self._net.eval()
+    def _evaluate(self, eval_set, step):
+        self._net.eval()
 
-            eval_loader = data.DataLoader(eval_set, batch_size=100, shuffle=True, num_workers=2)
+        eval_loader = data.DataLoader(eval_set, batch_size=100, shuffle=True, num_workers=2)
+        
+        cm = ConfusionMatrix([], [], self._class_num)
+        for batch in eval_loader:
+            inputs, labels = batch[0].to(self._device), batch[1]
+            with torch.no_grad():
+                predictions = self._net(inputs)
+                _, predictions = torch.max(predictions, 1)
+                cm.append(predictions.cpu().numpy(), labels.numpy())
 
-            tp = 0
-            total = 0
-            for inputs, labels in eval_loader:
-                with torch.no_grad():
-                    predictions = self._net(inputs)
-                    _, predictions = torch.max(predictions, 1)
-                    total += len(labels)
-                    tp += (predictions == labels).sum().item()
+        metrics = { "accuracy": cm.accuracy() }
+        for i, acc in enumerate(cm.class_accuracy()):
+            metrics[str(i)] = acc
 
-            print("accuracy {:.3f}".format((tp / total) * 100.0))
-        else:
-            print("model is not trained")
+        file_logger = FileLogger(self._model_dir, "accuracy", list(metrics.keys()))
+        file_logger.log(metrics, step)
 
     def _save_checkpoint(self, optimizer, epoch):
         fname = self._ckpt_name_tmpl.format(epoch + 1)
@@ -90,6 +98,8 @@ class Model(object):
         checkpoint = torch.load(fpath)
         
         self._net.load_state_dict(checkpoint['model_state_dict'])
+        self._net.to(self._device)
+        
         if optimizer:
             optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         epoch = checkpoint['epoch']
