@@ -2,6 +2,7 @@ import os
 from utils.dirs import create_dirs
 from utils.helpers import get_class
 from training.model import Model
+from training.metrics.file_logger import FileLogger
 from datasets.base.dataset import Dataset
 
 TRAIN = "train"
@@ -30,7 +31,24 @@ class Experiment():
                 self._train_model(directory, i)
 
     def plot_metrics(self):
-        pass
+        if self._k > 2:
+            metrics = ["accuracy"] + [str(i) for i in range(self._class_num)]
+            all_logs = None
+
+            for i in range(self._k):
+                logpath = os.path.join(
+                    self._model_dir,
+                    "fold_{}".format(i),
+                    "accuracy.csv"
+                )
+                log = FileLogger(logpath, i, metrics)
+                if all_logs:
+                    all_logs.add(log)
+                else:
+                    all_logs = log
+            
+            class_map = {value: key for key, value in self._config.dataset.params["label_map"].items()}
+            all_logs.plot(os.path.join(self._model_dir, "plot.png"), class_map)
 
     def _train_model(self, model_dir, fold_num=None):
         create_dirs([model_dir])
@@ -43,7 +61,7 @@ class Experiment():
             "lr": self._learning_rate
         }
 
-        model = Model(net, model_dir, self._class_num)
+        model = Model(net, model_dir, self._class_num, fold_num)
         model.train_and_evaluate(self._num_epochs, train_set, optimizer_params, eval_set)
 
     def _get_fold_nums(self, mode, fold_num=None):

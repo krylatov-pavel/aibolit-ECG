@@ -9,10 +9,11 @@ from training.metrics.file_logger import FileLogger
 from training.metrics.confusion_matrix import ConfusionMatrix
 
 class Model(object):
-    def __init__(self, net, model_dir, class_num):
+    def __init__(self, net, model_dir, class_num, index):
         self._net = net
         self._model_dir = model_dir
         self._class_num = class_num
+        self._index = index
 
         self._ckpt_extension = ".tar"
         self._ckpt_name_tmpl = "model.ckpt-{}" + self._ckpt_extension
@@ -24,6 +25,11 @@ class Model(object):
             optimizer = optim.Adam(self._net.parameters(), **optimizer_params)
             loss_fn = nn.CrossEntropyLoss()
             loss_acm = RunningAvg(0.0)
+            accuracy_logger = FileLogger(
+                fpath=os.path.join(self._model_dir, "accuracy.csv"),
+                name=self._index,
+                metrics=["accuracy"] + [str(i) for i in range(self._class_num)]
+            )
 
             if self.last_checkpoint:
                 optimizer, last_epoch = self._load_checkpoint(self.last_checkpoint, optimizer)
@@ -51,17 +57,13 @@ class Model(object):
                 
                 if epoch % 5 == 4:
                     self._save_checkpoint(optimizer, epoch)
-                    self._evaluate(eval_set, epoch)
-
-            if epoch % 5 != 4:
-                self._save_checkpoint(optimizer, epoch)
-                self._evaluate(eval_set, epoch)
+                    self._evaluate(eval_set, epoch, accuracy_logger)
 
             print("training complete")
         else:
             print("model have already trained for num_epochs parameter")
 
-    def _evaluate(self, eval_set, step):
+    def _evaluate(self, eval_set, step, logger):
         self._net.eval()
 
         eval_loader = data.DataLoader(eval_set, batch_size=100, shuffle=True, num_workers=2)
@@ -77,9 +79,7 @@ class Model(object):
         metrics = { "accuracy": cm.accuracy() }
         for i, acc in enumerate(cm.class_accuracy()):
             metrics[str(i)] = acc
-
-        file_logger = FileLogger(self._model_dir, "accuracy", list(metrics.keys()))
-        file_logger.log(metrics, step)
+        logger.log(metrics, step)
 
     def _save_checkpoint(self, optimizer, epoch):
         fname = self._ckpt_name_tmpl.format(epoch + 1)
