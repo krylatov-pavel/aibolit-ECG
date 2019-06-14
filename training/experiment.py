@@ -1,6 +1,9 @@
 import os
+import torch
+import torch.utils.data
 from utils.dirs import create_dirs
 from utils.helpers import get_class
+from models.MIT.ensemble import Ensemble
 from training.model import Model
 from training.metrics.file_logger import FileLogger
 from datasets.base.dataset import Dataset
@@ -31,7 +34,9 @@ class Experiment():
                 self._train_model(directory, i)
 
     def plot_metrics(self):
-        if self._k > 2:
+        if self._k == 2:
+            raise NotImplementedError()
+        elif self._k > 2:
             metrics = ["accuracy"] + [str(i) for i in range(self._class_num)]
             all_logs = None
 
@@ -50,6 +55,28 @@ class Experiment():
             class_map = {value: key for key, value in self._label_map.items()}
             all_logs.plot(os.path.join(self._model_dir, "plot.png"), class_map)
 
+    def export(self, checkpoint=None, use_best=False):
+        if self._k == 2:
+            net = self._load_model(self._model_dir)
+        elif self._k > 2:
+            models = {}
+            for i in range(self._k):
+                model_dir = os.path.join(self._model_dir, "fold_{}".format(i))
+                model_name = "model{}".format(i)
+                models[model_name] = self._load_model(model_dir, i, checkpoint=checkpoint, use_best=use_best)
+            net = Ensemble(**models)
+        else:
+            raise ValueError("invalid k")
+
+        dataset = Dataset(self._examples_provider, self._get_fold_nums(EVAL, 1))
+        data_loader = torch.utils.data.DataLoader(dataset)
+        x, _ = iter(data_loader).next()
+
+        net.eval()
+        net.to("cpu")
+        with torch.no_grad():
+            torch.onnx.export(net, x, os.path.join(self._model_dir, "exported.onnx"))
+
     def _train_model(self, model_dir, fold_num=None):
         create_dirs([model_dir])
 
@@ -63,6 +90,14 @@ class Experiment():
 
         model = Model(net, model_dir, self._class_num, fold_num)
         model.train_and_evaluate(self._num_epochs, train_set, optimizer_params, eval_set)
+
+    def _load_model(self, model_dir, fold_num=None, checkpoint=None, use_best=False):
+        net = get_class(self._config.model.name)(self._config)
+
+        model = Model(net, model_dir, self._class_num, fold_num)
+        net = model.load(checkpoint=None, use_best=False)
+
+        return net
 
     def _get_fold_nums(self, mode, fold_num=None):
         folds = list(range(self._k))

@@ -63,6 +63,15 @@ class Model(object):
         else:
             print("model have already trained for num_epochs parameter")
 
+    def load(self, checkpoint=None, use_best=False):
+        if use_best:
+            raise NotImplementedError()
+        else:
+            checkpoint = checkpoint or self.last_checkpoint
+            self._load_checkpoint(checkpoint, None)
+        
+        return self._net
+
     def _evaluate(self, eval_set, step, logger):
         self._net.eval()
 
@@ -79,7 +88,7 @@ class Model(object):
         metrics = { "accuracy": cm.accuracy() }
         for i, acc in enumerate(cm.class_accuracy()):
             metrics[str(i)] = acc
-        logger.log(metrics, step)
+        logger.log(metrics, step + 1)
 
     def _save_checkpoint(self, optimizer, epoch):
         fname = self._ckpt_name_tmpl.format(epoch + 1)
