@@ -75,7 +75,7 @@ class Experiment():
         net.eval()
         net.to("cpu")
         with torch.no_grad():
-            torch.onnx.export(net, x, os.path.join(self._model_dir, "exported.onnx"))
+            torch.onnx.export(net, x, os.path.join(self._model_dir, "model.onnx"))
 
     def _train_model(self, model_dir, fold_num=None):
         create_dirs([model_dir])
