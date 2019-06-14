@@ -14,12 +14,12 @@ class Experiment():
         self._model_dir = model_dir
         self._k = len(config.dataset.params.split_ratio)
         self._examples_provider = get_class(config.dataset.provider)(config.dataset.params)
-
-    def run(self):
         self._num_epochs = self._config.model.hparams["num_epochs"]
         self._learning_rate = self._config.model.hparams["learning_rate"]
         self._class_num = len(self._config.dataset.params["label_map"])
+        self._label_map = self._config.dataset.params["label_map"]
 
+    def run(self):
         #regular experiment
         if self._k == 2:
             self._train_model(self._model_dir)
@@ -47,7 +47,7 @@ class Experiment():
                 else:
                     all_logs = log
             
-            class_map = {value: key for key, value in self._config.dataset.params["label_map"].items()}
+            class_map = {value: key for key, value in self._label_map.items()}
             all_logs.plot(os.path.join(self._model_dir, "plot.png"), class_map)
 
     def _train_model(self, model_dir, fold_num=None):
