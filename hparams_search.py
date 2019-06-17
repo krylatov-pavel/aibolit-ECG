@@ -33,7 +33,6 @@ def main():
             settings = config.mutate(iteration)
             experiment = Experiment(settings, config.model_dir)
 
-            create_dirs([config.model_dir])
             config.save(config.model_dir)
 
             experiment.run()

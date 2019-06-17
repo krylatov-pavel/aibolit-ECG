@@ -10,6 +10,7 @@ def main():
 
     if args.config:
         config = Config(args.config)
+        config.save(config.model_dir)
         
         experiment = Experiment(config.settings, config.model_dir)
         experiment.run()

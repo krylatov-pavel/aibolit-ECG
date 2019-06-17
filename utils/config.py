@@ -1,6 +1,7 @@
+import os
 import json
 from bunch import Bunch
-import os
+from utils.dirs import create_dirs
 
 class Config(object):
     def __init__(self, name):
@@ -24,6 +25,7 @@ class Config(object):
         )
 
     def save(self, model_dir):
+        create_dirs([model_dir])
         fpath = os.path.join(model_dir, "config.json")
         with open(fpath,'w') as file:
             json.dump(self.settings, file, sort_keys=False, indent=4)
