@@ -1,83 +1,97 @@
 import os
 import re
+import mlflow
 import torch
 from torch.utils import data
 import torch.optim as optim
 import torch.nn as nn
 from training.metrics.running_avg import RunningAvg
-from training.metrics.file_logger import FileLogger
+#from training.metrics.file_logger import FileLogger
 from training.metrics.confusion_matrix import ConfusionMatrix
+import training.checkpoint as checkpoint
+
+def create_optimizer(optimizer_type, net_parameters, optimizer_params):
+    if optimizer_type == "adam":
+        return optim.Adam(net_parameters, **optimizer_params)
+    else:
+        raise ValueError("Unknown optimizer type")
 
 class Model(object):
-    def __init__(self, net, model_dir, class_num, index):
+    def __init__(self, net, model_dir, device=None, curr_epoch=None, optimizer=None):
         self._net = net
         self._model_dir = model_dir
-        self._class_num = class_num
-        self._index = index
+        self._device = device or torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-        self._ckpt_extension = ".tar"
-        self._ckpt_name_tmpl = "model.ckpt-{}" + self._ckpt_extension
+        self._curr_epoch = curr_epoch or 0
+        self._optimizer = optimizer
 
-        self._device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        
-    def train_and_evaluate(self, num_epochs, train_set, optimizer_params, eval_set):
-        if self.last_checkpoint < num_epochs:
-            optimizer = optim.Adam(self._net.parameters(), **optimizer_params)
+    @staticmethod
+    def restore(net, model_dir, checkpoint_index, device=None):
+        epoch, model_state, optimizer_state, params = checkpoint.load(model_dir, checkpoint_index)
+
+        device = device or torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+        net.load_state_dict(model_state)
+        net.to(device)
+
+        optimizer_type = params["optimizer_type"]
+        optimizer_params = params["optimizer_params"]
+        optimizer = create_optimizer(optimizer_type, net.parameters(), optimizer_params)
+        optimizer.load_state_dict(optimizer_state)
+
+        return Model(net, model_dir, device=device, optimizer=optimizer, curr_epoch=epoch)
+
+    @property
+    def net(self):
+        return self._net
+
+    def train_and_evaluate(self, train_spec, eval_spec, run_id=None):
+        if self._curr_epoch < train_spec.max_epochs:
+            if not self._optimizer:
+                self._optimizer = create_optimizer(
+                    optimizer_type=train_spec.optimizer_type,
+                    optimizer_params=train_spec.optimizer_params,
+                    net_parameters = self._net.parameters()
+                )
+
             loss_fn = nn.CrossEntropyLoss()
             loss_acm = RunningAvg(0.0)
-            accuracy_logger = FileLogger(
-                fpath=os.path.join(self._model_dir, "accuracy.csv"),
-                name=self._index,
-                metrics=["accuracy"] + [str(i) for i in range(self._class_num)]
-            )
-
-            if self.last_checkpoint:
-                optimizer, last_epoch = self._load_checkpoint(self.last_checkpoint, optimizer)
-                curr_epoch = last_epoch + 1
-            else:
-                curr_epoch = 0
 
             self._net.to(self._device)
 
-            train_loader = data.DataLoader(train_set, batch_size=32, shuffle=True)
-
-            for epoch in range(curr_epoch, num_epochs):
+            train_loader = data.DataLoader(train_spec.dataset, batch_size=train_spec.batch_size, shuffle=True)
+            while self._curr_epoch < train_spec.max_epochs:
+                self._curr_epoch += 1
                 self._net.train()
                 loss_acm.next_epoch()
                 for batch in train_loader:
                     inputs, labels = batch[0].to(self._device), batch[1].to(self._device)
 
-                    optimizer.zero_grad()
+                    self._optimizer.zero_grad()
                     predictions = self._net(inputs)
                     loss = loss_fn(predictions, labels)
                     loss.backward()
-                    optimizer.step()
+                    self._optimizer.step()
 
-                    loss_acm.next_iteration(loss)
+                    loss_acm.next_iteration(loss.item())
+
+                mlflow.log_metric("traing_loss", loss_acm.avg, step=self._curr_epoch)
                 
-                if epoch % 5 == 4:
-                    self._save_checkpoint(optimizer, epoch)
-                    self._evaluate(eval_set, epoch, accuracy_logger)
+                if self._curr_epoch % eval_spec.every_n_epochs == 0 or self._curr_epoch == train_spec.max_epochs:
+                    self._save_checkpoint(train_spec.optimizer_type, train_spec.optimizer_params, run_id=run_id)
+                    metrics = self.evaluate(eval_spec)
+                    mlflow.log_metrics(metrics, step=self._curr_epoch)
 
             print("training complete")
         else:
-            print("model have already trained for num_epochs parameter")
+            print("model have already trained for max_epochs parameter")
 
-    def load(self, checkpoint=None, use_best=False):
-        if use_best:
-            raise NotImplementedError()
-        else:
-            checkpoint = checkpoint or self.last_checkpoint
-            self._load_checkpoint(checkpoint, None)
-        
-        return self._net
-
-    def _evaluate(self, eval_set, step, logger):
+    def evaluate(self, eval_spec):
         self._net.eval()
 
-        eval_loader = data.DataLoader(eval_set, batch_size=100, shuffle=True, num_workers=2)
-        
-        cm = ConfusionMatrix([], [], self._class_num)
+        cm = ConfusionMatrix([], [], eval_spec.class_num)
+
+        eval_loader = data.DataLoader(eval_spec.dataset, batch_size=eval_spec.batch_size, shuffle=True, num_workers=2)
         for batch in eval_loader:
             inputs, labels = batch[0].to(self._device), batch[1]
             with torch.no_grad():
@@ -88,39 +102,22 @@ class Model(object):
         metrics = { "accuracy": cm.accuracy() }
         for i, acc in enumerate(cm.class_accuracy()):
             metrics[str(i)] = acc
-        logger.log(metrics, step + 1)
-
-    def _save_checkpoint(self, optimizer, epoch):
-        fname = self._ckpt_name_tmpl.format(epoch + 1)
-        fpath = os.path.join(self._model_dir, fname)
-
-        torch.save({
-            'epoch': epoch,
-            'model_state_dict': self._net.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-            }, fpath)
-
-    def _load_checkpoint(self, checkpoint, optimizer):
-        fname = self._ckpt_name_tmpl.format(checkpoint)
-        fpath = os.path.join(self._model_dir, fname)
-
-        checkpoint = torch.load(fpath)
         
-        self._net.load_state_dict(checkpoint['model_state_dict'])
-        self._net.to(self._device)
-        
-        if optimizer:
-            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        epoch = checkpoint['epoch']
+        return metrics
 
-        return optimizer, epoch
+    def _save_checkpoint(self, optimizer_type, optimizer_params, run_id=None):
+        params = {
+            "optimizer_type": optimizer_type,
+            "optimizer_params": optimizer_params
+        }
 
-    @property
-    def last_checkpoint(self):
-        regex = "^model.ckpt-(?P<checkpoint>[\d]+)\.tar" 
-        
-        ckpts_names = (f for f in os.listdir(self._model_dir) if f.endswith(self._ckpt_extension))
-        ckpt_matches = (re.match(regex, f) for f in ckpts_names)
-        ckpt_nums = [int(m.group("checkpoint")) for m in ckpt_matches if m]
+        if run_id:
+            params["run_id"] = run_id
 
-        return max(ckpt_nums) if len(ckpt_nums) else 0
+        checkpoint.save(
+            model_dir=self._model_dir,
+            epoch=self._curr_epoch,
+            net=self._net,
+            optimizer=self._optimizer,
+            params=params
+        )

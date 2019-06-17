@@ -1,11 +1,14 @@
 import os
+import mlflow
 import torch
 import torch.utils.data
+import training.checkpoint as checkpoint
+from training.spec import TrainSpec, EvalSpec
+from training.model import Model
+from training.metrics.file_logger import FileLogger
 from utils.dirs import create_dirs
 from utils.helpers import get_class
 from models.MIT.ensemble import Ensemble
-from training.model import Model
-from training.metrics.file_logger import FileLogger
 from datasets.base.dataset import Dataset
 
 TRAIN = "train"
@@ -15,14 +18,19 @@ class Experiment():
     def __init__(self, config, model_dir):
         self._config = config
         self._model_dir = model_dir
+        self._name = config.model.experiment
         self._k = len(config.dataset.params.split_ratio)
         self._examples_provider = get_class(config.dataset.provider)(config.dataset.params)
+        self._iteration = self._config["iteration"]
         self._num_epochs = self._config.model.hparams["num_epochs"]
         self._learning_rate = self._config.model.hparams["learning_rate"]
         self._class_num = len(self._config.dataset.params["label_map"])
         self._label_map = self._config.dataset.params["label_map"]
 
     def run(self):
+        mlflow.set_tracking_uri("file:{}".format(os.path.join(os.path.dirname(self._model_dir), "mlruns")))
+        mlflow.set_experiment(self._name)
+
         #regular experiment
         if self._k == 2:
             self._train_model(self._model_dir)
@@ -57,13 +65,14 @@ class Experiment():
 
     def export(self, checkpoint=None, use_best=False):
         if self._k == 2:
-            net = self._load_model(self._model_dir)
+            net = self._load_net(self._model_dir)
         elif self._k > 2:
             models = {}
             for i in range(self._k):
                 model_dir = os.path.join(self._model_dir, "fold_{}".format(i))
                 model_name = "model{}".format(i)
-                models[model_name] = self._load_model(model_dir, i, checkpoint=checkpoint, use_best=use_best)
+                models[model_name] = self._load_net(model_dir, checkpoint_index=checkpoint, use_best=use_best)
+
             net = Ensemble(**models)
         else:
             raise ValueError("invalid k")
@@ -81,21 +90,52 @@ class Experiment():
         create_dirs([model_dir])
 
         net = get_class(self._config.model.name)(self._config)
-        train_set = Dataset(self._examples_provider, self._get_fold_nums(TRAIN, fold_num))
-        eval_set = Dataset(self._examples_provider, self._get_fold_nums(EVAL, fold_num))
 
-        optimizer_params = {
-            "lr": self._learning_rate
-        }
+        train_spec = TrainSpec(
+            max_epochs=self._num_epochs,
+            dataset=Dataset(self._examples_provider, self._get_fold_nums(TRAIN, fold_num)),
+            batch_size=32,
+            optimizer_type="adam",
+            optimizer_params={
+                "lr": self._learning_rate
+            }
+        )
 
-        model = Model(net, model_dir, self._class_num, fold_num)
-        model.train_and_evaluate(self._num_epochs, train_set, optimizer_params, eval_set)
+        eval_spec = EvalSpec(
+            class_num=self._class_num,
+            dataset=Dataset(self._examples_provider, self._get_fold_nums(EVAL, fold_num)),
+            batch_size=100,
+            every_n_epochs=5
+        )
 
-    def _load_model(self, model_dir, fold_num=None, checkpoint=None, use_best=False):
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        last_checkpoint = checkpoint.last(model_dir)
+        if last_checkpoint:
+            _, _, _, params = checkpoint.load(model_dir, last_checkpoint)
+            run_id = params.get("run_id")
+            model = Model.restore(net, model_dir, last_checkpoint, device=device)
+        else:
+            run_id = None
+            model = Model(net, model_dir, device=device)
+
+        with mlflow.start_run(run_id=run_id) as run:
+            mlflow.set_tag("iteration", self._iteration)
+            mlflow.set_tag("fold", fold_num)
+            mlflow.log_param("learning rate", self._learning_rate)
+
+            model.train_and_evaluate(train_spec, eval_spec, run_id=run.info.run_id)
+
+    def _load_net(self, model_dir, checkpoint_index=None, use_best=False):
         net = get_class(self._config.model.name)(self._config)
 
-        model = Model(net, model_dir, self._class_num, fold_num)
-        net = model.load(checkpoint=None, use_best=False)
+        if use_best:
+            raise NotImplementedError()
+        else:
+            checkpoint_index = checkpoint_index or checkpoint.last(model_dir)
+            _, model_state, _, _ = checkpoint.load(model_dir, checkpoint)
+            net.load_state_dict(model_state)
+
+        net.eval()
 
         return net
 
