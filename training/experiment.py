@@ -2,10 +2,12 @@ import os
 import mlflow
 import torch
 import torch.utils.data
+import numpy as np
+import pandas as pd
 import training.checkpoint as checkpoint
 from training.spec import TrainSpec, EvalSpec
 from training.model import Model
-from training.metrics.file_logger import FileLogger
+from training.metrics.logger import Logger
 from utils.dirs import create_dirs
 from utils.helpers import get_class
 from models.MIT.ensemble import Ensemble
@@ -43,25 +45,15 @@ class Experiment():
 
     def plot_metrics(self):
         if self._k == 2:
-            raise NotImplementedError()
+            logs = Logger(self._model_dir).read()
         elif self._k > 2:
-            metrics = ["accuracy"] + [str(i) for i in range(self._class_num)]
-            all_logs = None
-
+            logs = pd.DataFrame(data=None, index=None, columns=None)
             for i in range(self._k):
-                logpath = os.path.join(
-                    self._model_dir,
-                    "fold_{}".format(i),
-                    "accuracy.csv"
-                )
-                log = FileLogger(logpath, i, metrics)
-                if all_logs:
-                    all_logs.add(log)
-                else:
-                    all_logs = log
-            
-            class_map = {value: key for key, value in self._label_map.items()}
-            all_logs.plot(os.path.join(self._model_dir, "plot.png"), class_map)
+                log_dir = os.path.join(self._model_dir, "fold_{}".format(i))
+                log = Logger(log_dir).read(fold_num=i)
+                logs = logs.append(log, ignore_index=True)
+                
+        Logger.plot(logs, os.path.join(self._model_dir, "plot.png"))
 
     def export(self, checkpoint=None, use_best=False):
         if self._k == 2:

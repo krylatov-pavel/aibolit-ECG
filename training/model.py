@@ -8,6 +8,7 @@ import torch.nn as nn
 from torch.utils.tensorboard import SummaryWriter
 from training.metrics.running_avg import RunningAvg
 from training.metrics.confusion_matrix import ConfusionMatrix
+from training.metrics.logger import Logger
 import training.checkpoint as checkpoint
 
 def create_optimizer(optimizer_type, net_parameters, optimizer_params):
@@ -59,6 +60,7 @@ class Model(object):
 
             self._net.to(self._device)
 
+            file_writer = Logger(log_dir=self._model_dir)
             tensorboard_writer = SummaryWriter(log_dir=os.path.join(self._model_dir, "tbruns"))
             inputs = next(iter(train_spec.dataset))[0].unsqueeze(0).to(self._device)
             tensorboard_writer.add_graph(self._net, input_to_model=inputs)
@@ -87,6 +89,7 @@ class Model(object):
                     metrics = self.evaluate(eval_spec)
                     mlflow.log_metrics(metrics, step=self._curr_epoch)
                     for metric, scalar in metrics.items():
+                        file_writer.add_scalar(metric, scalar, self._curr_epoch)
                         tensorboard_writer.add_scalar(metric, scalar, global_step=self._curr_epoch)
 
             tensorboard_writer.close()
