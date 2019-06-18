@@ -7,8 +7,9 @@ class TrainSpec(object):
         self.optimizer_params = optimizer_params
 
 class EvalSpec(object):
-    def __init__(self, class_num, dataset, batch_size=None, every_n_epochs=None):
+    def __init__(self, class_num, dataset, batch_size=None, every_n_epochs=None, class_map=None):
         self.dataset = dataset
         self.batch_size = batch_size or 100
         self.class_num = class_num
         self.every_n_epochs = every_n_epochs or 5
+        self.class_map = class_map

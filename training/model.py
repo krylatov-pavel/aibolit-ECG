@@ -109,7 +109,7 @@ class Model(object):
 
         metrics = { "accuracy": cm.accuracy() }
         for i, acc in enumerate(cm.class_accuracy()):
-            metrics[str(i)] = acc
+            metrics["accuracy_{}".format(eval_spec.class_map.get(i))] = acc
         
         return metrics
 

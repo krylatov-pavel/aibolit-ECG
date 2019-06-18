@@ -105,7 +105,8 @@ class Experiment():
             class_num=self._class_num,
             dataset=Dataset(self._examples_provider, self._get_fold_nums(EVAL, fold_num)),
             batch_size=100,
-            every_n_epochs=5
+            every_n_epochs=5,
+            class_map={value: key for key, value in self._label_map.items()}
         )
 
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
