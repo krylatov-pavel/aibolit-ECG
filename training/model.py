@@ -5,8 +5,8 @@ import torch
 from torch.utils import data
 import torch.optim as optim
 import torch.nn as nn
+from torch.utils.tensorboard import SummaryWriter
 from training.metrics.running_avg import RunningAvg
-#from training.metrics.file_logger import FileLogger
 from training.metrics.confusion_matrix import ConfusionMatrix
 import training.checkpoint as checkpoint
 
@@ -59,6 +59,10 @@ class Model(object):
 
             self._net.to(self._device)
 
+            tensorboard_writer = SummaryWriter(log_dir=os.path.join(self._model_dir, "tbruns"))
+            inputs = next(iter(train_spec.dataset))[0].unsqueeze(0).to(self._device)
+            tensorboard_writer.add_graph(self._net, input_to_model=inputs)
+
             train_loader = data.DataLoader(train_spec.dataset, batch_size=train_spec.batch_size, shuffle=True)
             while self._curr_epoch < train_spec.max_epochs:
                 self._curr_epoch += 1
@@ -76,12 +80,16 @@ class Model(object):
                     loss_acm.next_iteration(loss.item())
 
                 mlflow.log_metric("traing_loss", loss_acm.avg, step=self._curr_epoch)
+                tensorboard_writer.add_scalar("traing_loss", loss_acm.avg, global_step=self._curr_epoch)
                 
                 if self._curr_epoch % eval_spec.every_n_epochs == 0 or self._curr_epoch == train_spec.max_epochs:
                     self._save_checkpoint(train_spec.optimizer_type, train_spec.optimizer_params, run_id=run_id)
                     metrics = self.evaluate(eval_spec)
                     mlflow.log_metrics(metrics, step=self._curr_epoch)
+                    for metric, scalar in metrics.items():
+                        tensorboard_writer.add_scalar(metric, scalar, global_step=self._curr_epoch)
 
+            tensorboard_writer.close()
             print("training complete")
         else:
             print("model have already trained for max_epochs parameter")
