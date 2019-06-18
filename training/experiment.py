@@ -1,5 +1,4 @@
 import os
-import mlflow
 import torch
 import torch.utils.data
 import numpy as np
@@ -30,9 +29,6 @@ class Experiment():
         self._label_map = self._config.dataset.params["label_map"]
 
     def run(self):
-        mlflow.set_tracking_uri("file:{}".format(os.path.join(os.path.dirname(self._model_dir), "mlruns")))
-        mlflow.set_experiment(self._name)
-
         #regular experiment
         if self._k == 2:
             self._train_model(self._model_dir)
@@ -52,7 +48,7 @@ class Experiment():
                 log_dir = os.path.join(self._model_dir, "fold_{}".format(i))
                 log = Logger(log_dir).read(fold_num=i)
                 logs = logs.append(log, ignore_index=True)
-                
+
         Logger.plot(logs, os.path.join(self._model_dir, "plot.png"))
 
     def export(self, checkpoint=None, use_best=False):
@@ -102,21 +98,14 @@ class Experiment():
         )
 
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        
         last_checkpoint = checkpoint.last(model_dir)
         if last_checkpoint:
-            _, _, _, params = checkpoint.load(model_dir, last_checkpoint)
-            run_id = params.get("run_id")
             model = Model.restore(net, model_dir, last_checkpoint, device=device)
         else:
-            run_id = None
             model = Model(net, model_dir, device=device)
 
-        with mlflow.start_run(run_id=run_id) as run:
-            mlflow.set_tag("iteration", self._iteration)
-            mlflow.set_tag("fold", fold_num)
-            mlflow.log_param("learning rate", self._learning_rate)
-
-            model.train_and_evaluate(train_spec, eval_spec, run_id=run.info.run_id)
+        model.train_and_evaluate(train_spec, eval_spec)
 
     def _load_net(self, model_dir, checkpoint_index=None, use_best=False):
         net = get_class(self._config.model.name)(self._config)

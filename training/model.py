@@ -1,6 +1,5 @@
 import os
 import re
-import mlflow
 import torch
 from torch.utils import data
 import torch.optim as optim
@@ -46,7 +45,7 @@ class Model(object):
     def net(self):
         return self._net
 
-    def train_and_evaluate(self, train_spec, eval_spec, run_id=None):
+    def train_and_evaluate(self, train_spec, eval_spec):
         if self._curr_epoch < train_spec.max_epochs:
             if not self._optimizer:
                 self._optimizer = create_optimizer(
@@ -81,13 +80,11 @@ class Model(object):
 
                     loss_acm.next_iteration(loss.item())
 
-                mlflow.log_metric("traing_loss", loss_acm.avg, step=self._curr_epoch)
                 tensorboard_writer.add_scalar("traing_loss", loss_acm.avg, global_step=self._curr_epoch)
                 
                 if self._curr_epoch % eval_spec.every_n_epochs == 0 or self._curr_epoch == train_spec.max_epochs:
-                    self._save_checkpoint(train_spec.optimizer_type, train_spec.optimizer_params, run_id=run_id)
+                    self._save_checkpoint(train_spec.optimizer_type, train_spec.optimizer_params)
                     metrics = self.evaluate(eval_spec)
-                    mlflow.log_metrics(metrics, step=self._curr_epoch)
                     for metric, scalar in metrics.items():
                         file_writer.add_scalar(metric, scalar, self._curr_epoch)
                         tensorboard_writer.add_scalar(metric, scalar, global_step=self._curr_epoch)
@@ -116,14 +113,11 @@ class Model(object):
         
         return metrics
 
-    def _save_checkpoint(self, optimizer_type, optimizer_params, run_id=None):
+    def _save_checkpoint(self, optimizer_type, optimizer_params):
         params = {
             "optimizer_type": optimizer_type,
             "optimizer_params": optimizer_params
         }
-
-        if run_id:
-            params["run_id"] = run_id
 
         checkpoint.save(
             model_dir=self._model_dir,
