@@ -56,6 +56,8 @@ class Logger(object):
         plt.ylim(0.0, 1.0)
         y_pos = np.arange(11) * 0.1
         plt.yticks(y_pos, [str(int(percent * 100)) for percent in y_pos])
+        x_pos = sorted(logs.step.unique())
+        plt.xticks(x_pos, x_pos)
         
         for metric, color in metrics:
             m_mean = steps[metric].agg(np.mean)
