@@ -24,6 +24,10 @@ class Config(object):
             iteration
         )
 
+    @property
+    def k(self):
+        return len(self.settings.dataset.params.split_ratio)
+
     def save(self, model_dir):
         create_dirs([model_dir])
         fpath = os.path.join(model_dir, "config.json")

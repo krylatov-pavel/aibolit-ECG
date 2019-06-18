@@ -82,3 +82,14 @@ class Logger(object):
 
         fig.savefig(fpath)
         plt.close(fig)
+
+    @staticmethod
+    def max_accuracy(logs):
+        steps = logs.groupby("step")
+        
+        accuracy = steps.accuracy.agg(np.mean)
+        steps, accuracy = unzip_list(accuracy.iteritems())
+        
+        best_idx = np.argmax(accuracy)
+
+        return accuracy[best_idx], steps[best_idx]

@@ -1,12 +1,10 @@
 import os
 import torch
 import torch.utils.data
-import numpy as np
-import pandas as pd
 import training.checkpoint as checkpoint
+import training.metrics.stats as stats
 from training.spec import TrainSpec, EvalSpec
 from training.model import Model
-from training.metrics.logger import Logger
 from utils.dirs import create_dirs
 from utils.helpers import get_class
 from models.MIT.ensemble import Ensemble
@@ -39,18 +37,6 @@ class Experiment():
                 directory = os.path.join(self._model_dir, "fold_{}".format(i))
                 self._train_model(directory, i)
 
-    def plot_metrics(self):
-        if self._k == 2:
-            logs = Logger(self._model_dir).read()
-        elif self._k > 2:
-            logs = pd.DataFrame(data=None, index=None, columns=None)
-            for i in range(self._k):
-                log_dir = os.path.join(self._model_dir, "fold_{}".format(i))
-                log = Logger(log_dir).read(fold_num=i)
-                logs = logs.append(log, ignore_index=True)
-
-        Logger.plot(logs, os.path.join(self._model_dir, "plot.png"))
-
     def export(self, checkpoint=None, use_best=False):
         if self._k == 2:
             net = self._load_net(self._model_dir)
@@ -73,6 +59,9 @@ class Experiment():
         net.to("cpu")
         with torch.no_grad():
             torch.onnx.export(net, x, os.path.join(self._model_dir, "model.onnx"))
+
+    def plot_metrics(self):
+        stats.plot_metrics(self._model_dir, self._k)
 
     def _train_model(self, model_dir, fold_num=None):
         create_dirs([model_dir])
