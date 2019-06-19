@@ -11,6 +11,8 @@ from training.metrics.logger import Logger
 import training.checkpoint as checkpoint
 from training.early_stopper import EarlyStopper
 
+WAIT_STEPS = 5
+
 def create_optimizer(optimizer_type, net_parameters, optimizer_params):
     if optimizer_type == "adam":
         return optim.Adam(net_parameters, **optimizer_params)
@@ -18,13 +20,14 @@ def create_optimizer(optimizer_type, net_parameters, optimizer_params):
         raise ValueError("Unknown optimizer type")
 
 class Model(object):
-    def __init__(self, net, model_dir, device=None, curr_epoch=None, optimizer=None):
+    def __init__(self, net, model_dir, device=None, curr_epoch=None, optimizer=None, early_stopper=None):
         self._net = net
         self._model_dir = model_dir
         self._device = device or torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         self._curr_epoch = curr_epoch or 0
         self._optimizer = optimizer
+        self._early_stopper = early_stopper
 
     @staticmethod
     def restore(net, model_dir, checkpoint_index, device=None):
@@ -40,7 +43,11 @@ class Model(object):
         optimizer = create_optimizer(optimizer_type, net.parameters(), optimizer_params)
         optimizer.load_state_dict(optimizer_state)
 
-        return Model(net, model_dir, device=device, optimizer=optimizer, curr_epoch=epoch)
+        best_metric_value = params.get("best_metric_value")
+        steps_since_last_improvemet = params.get("steps_since_last_improvemet")
+        early_stopper = EarlyStopper(WAIT_STEPS, metric_value=best_metric_value, steps_since_last_improvemet=steps_since_last_improvemet)
+
+        return Model(net, model_dir, device=device, optimizer=optimizer, curr_epoch=epoch, early_stopper=early_stopper)
 
     @property
     def net(self):
@@ -54,13 +61,14 @@ class Model(object):
                     optimizer_params=train_spec.optimizer_params,
                     net_parameters = self._net.parameters()
                 )
+            
+            if not self._early_stopper:
+                self._early_stopper = EarlyStopper(WAIT_STEPS)
 
             loss_fn = nn.CrossEntropyLoss()
             loss_acm = RunningAvg(0.0)
 
             self._net.to(self._device)
-
-            early_stopper = EarlyStopper(wait_steps=5)
 
             file_writer = Logger(log_dir=self._model_dir)
             tensorboard_writer = SummaryWriter(log_dir=os.path.join(self._model_dir, "tbruns"))
@@ -68,7 +76,7 @@ class Model(object):
             tensorboard_writer.add_graph(self._net, input_to_model=inputs)
 
             train_loader = data.DataLoader(train_spec.dataset, batch_size=train_spec.batch_size, shuffle=True)
-            while self._curr_epoch < train_spec.max_epochs:
+            while self._curr_epoch < train_spec.max_epochs and not self._early_stopper.stop:
                 self._curr_epoch += 1
                 self._net.train()
                 loss_acm.next_epoch()
@@ -86,21 +94,27 @@ class Model(object):
                 tensorboard_writer.add_scalar("traing_loss", loss_acm.avg, global_step=self._curr_epoch)
                 
                 if self._curr_epoch % eval_spec.every_n_epochs == 0 or self._curr_epoch == train_spec.max_epochs:
-                    self._save_checkpoint(train_spec.optimizer_type, train_spec.optimizer_params, keep_n_last=5)
                     metrics = self.evaluate(eval_spec)
                     for metric, scalar in metrics.items():
                         file_writer.add_scalar(metric, scalar, self._curr_epoch)
                         tensorboard_writer.add_scalar(metric, scalar, global_step=self._curr_epoch)
-                    early_stopper.step(metrics.get("accuracy"))
-                
-                if early_stopper.stop:
-                    print("accuracy didn't impove for last {} eval probs, interrupting on step {}".format(5, self._curr_epoch))
-                    break
+                    self._early_stopper.step(metrics.get("accuracy"))
+                    self._save_checkpoint(
+                        optimizer_type=train_spec.optimizer_type, 
+                        optimizer_params=train_spec.optimizer_params,
+                        best_metric_value=self._early_stopper.best_metric_value,
+                        steps_since_last_improvemet=self._early_stopper.steps_since_last_improvemet,
+                        keep_n_last=train_spec.max_to_keep
+                    )
 
             tensorboard_writer.close()
-            print("training complete")
+            
+            if self._early_stopper.stop:
+                print("accuracy didn't improve for last {} eval probs, interrupted on epoch {}".format(WAIT_STEPS, self._curr_epoch))
+            elif self._curr_epoch >= train_spec.max_epochs:
+                print("reached max_epoch steps: ", train_spec.max_epochs)
         else:
-            print("model have already trained for max_epochs parameter")
+            print("model have already trained for max_epochs steps: ", train_spec.max_epochs)
 
     def evaluate(self, eval_spec):
         self._net.eval()
@@ -121,10 +135,12 @@ class Model(object):
         
         return metrics
 
-    def _save_checkpoint(self, optimizer_type, optimizer_params, keep_n_last=None):
+    def _save_checkpoint(self, optimizer_type, optimizer_params, best_metric_value, steps_since_last_improvemet, keep_n_last=None):
         params = {
             "optimizer_type": optimizer_type,
-            "optimizer_params": optimizer_params
+            "optimizer_params": optimizer_params,
+            "best_metric_value": best_metric_value,
+            "steps_since_last_improvemet": steps_since_last_improvemet
         }
 
         checkpoint.save(

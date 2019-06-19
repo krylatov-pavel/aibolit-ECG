@@ -20,11 +20,12 @@ class Experiment():
         self._name = config.model.experiment
         self._k = len(config.dataset.params.split_ratio)
         self._examples_provider = get_class(config.dataset.provider)(config.dataset.params)
-        self._iteration = self._config["iteration"]
-        self._max_epochs = self._config.model["max_epochs"]
-        self._learning_rate = self._config.model.hparams["learning_rate"]
-        self._class_num = len(self._config.dataset.params["label_map"])
-        self._label_map = self._config.dataset.params["label_map"]
+        self._iteration = config["iteration"]
+        self._max_epochs = config.model["max_epochs"]
+        self._learning_rate = config.model.hparams["learning_rate"]
+        self._class_num = len(config.dataset.params["label_map"])
+        self._label_map = config.dataset.params["label_map"]
+        self._max_to_keep = config["max_to_keep"]
 
     def run(self):
         #regular experiment
@@ -75,7 +76,8 @@ class Experiment():
             optimizer_type="adam",
             optimizer_params={
                 "lr": self._learning_rate
-            }
+            },
+            max_to_keep=self._max_to_keep
         )
 
         eval_spec = EvalSpec(

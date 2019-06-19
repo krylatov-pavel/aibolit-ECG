@@ -14,3 +14,11 @@ class EarlyStopper(object):
     @property
     def stop(self):
         return self._steps_since_last_improvemet >= self._wait_steps
+
+    @property
+    def best_metric_value(self):
+        return self._best_metric_value
+
+    @property
+    def steps_since_last_improvemet(self):
+        return self._steps_since_last_improvemet
