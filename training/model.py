@@ -112,9 +112,9 @@ class Model(object):
             if self._early_stopper.stop:
                 print("accuracy didn't improve for last {} eval probs, interrupted on epoch {}".format(WAIT_STEPS, self._curr_epoch))
             elif self._curr_epoch >= train_spec.max_epochs:
-                print("reached max_epoch steps: ", train_spec.max_epochs)
+                print("reached max_epoch steps: {}".format(train_spec.max_epochs))
         else:
-            print("model have already trained for max_epochs steps: ", train_spec.max_epochs)
+            print("model have already trained for max_epochs steps: {}".format(train_spec.max_epochs))
 
     def evaluate(self, eval_spec):
         self._net.eval()

@@ -20,10 +20,9 @@ def main():
 
         report = []
         for c in confs:
-            accuracy_ckpt, accuracy_combination = stats.max_accuracy(c.model_dir, c.k)
+            accuracy = stats.max_accuracy(c.model_dir, c.k)
             report.append({
-                "checkpoint_accuracy": accuracy_ckpt,
-                "combination_accuracy": accuracy_combination,
+                "accuracy": accuracy,
                 "iteration": c.settings.iteration
                 #add config parameters here if needed
             })

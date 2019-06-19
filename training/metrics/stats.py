@@ -18,17 +18,13 @@ def plot_metrics(model_dir, k):
 def max_accuracy(model_dir, k):
         if k == 2:
             logs = Logger(model_dir).read()
-            acc_per_checkpoint, _ = Logger.max_accuracy(logs)
-            acc_combination = acc_per_checkpoint
+            accuracy, _ = Logger.max_accuracy(logs)
         elif k > 2:
-            logs = pd.DataFrame(data=None, index=None, columns=None)
-            fold_accs = [None] * k
+            accuracy = [None] * k
             for i in range(k):
                 log_dir = os.path.join(model_dir, "fold_{}".format(i))
                 log = Logger(log_dir).read(fold_num=i)
-                fold_accs[i], _ = Logger.max_accuracy(log)
-                logs = logs.append(log, ignore_index=True)
-            acc_per_checkpoint, _ = Logger.max_accuracy(logs)
-            acc_combination = np.mean(fold_accs)
+                accuracy[i], _ = Logger.max_accuracy(log)
+            accuracy = np.mean(accuracy)
 
-        return acc_per_checkpoint, acc_combination
+        return accuracy
