@@ -21,7 +21,7 @@ class Experiment():
         self._k = len(config.dataset.params.split_ratio)
         self._examples_provider = get_class(config.dataset.provider)(config.dataset.params)
         self._iteration = self._config["iteration"]
-        self._num_epochs = self._config.model.hparams["num_epochs"]
+        self._max_epochs = self._config.model["max_epochs"]
         self._learning_rate = self._config.model.hparams["learning_rate"]
         self._class_num = len(self._config.dataset.params["label_map"])
         self._label_map = self._config.dataset.params["label_map"]
@@ -69,7 +69,7 @@ class Experiment():
         net = get_class(self._config.model.name)(self._config)
 
         train_spec = TrainSpec(
-            max_epochs=self._num_epochs,
+            max_epochs=self._max_epochs,
             dataset=Dataset(self._examples_provider, self._get_fold_nums(TRAIN, fold_num)),
             batch_size=32,
             optimizer_type="adam",

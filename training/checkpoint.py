@@ -31,11 +31,26 @@ def load(model_dir, checkpoint):
 
     return epoch, model_state, optimizer_state, params
 
-def last(model_dir):
-    regex = "^model.ckpt-(?P<checkpoint>[\d]+)\.tar" 
-    
+def all(model_dir):
+    regex = "^model.ckpt-(?P<checkpoint>[\d]+)\.tar"
+
     ckpts_names = (f for f in os.listdir(model_dir) if f.endswith(ckpt_extension))
     ckpt_matches = (re.match(regex, f) for f in ckpts_names)
     ckpt_nums = [int(m.group("checkpoint")) for m in ckpt_matches if m]
 
+    return sorted(ckpt_nums)
+
+def last(model_dir):
+    ckpt_nums = all(model_dir)
+
     return max(ckpt_nums) if len(ckpt_nums) else 0
+
+def remove(model_dir, checkpoints):
+    ckpts = (ckpt_name_tmpl.format(n) for n in checkpoints)
+    ckpts = (os.path.join(model_dir, n) for n in ckpts)
+    for c in ckpts:
+        try:
+            os.remove(c)
+        except Exception as e:
+            print("can't remove ", c, " error details below")
+            print(e)

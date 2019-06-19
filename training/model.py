@@ -9,6 +9,7 @@ from training.metrics.running_avg import RunningAvg
 from training.metrics.confusion_matrix import ConfusionMatrix
 from training.metrics.logger import Logger
 import training.checkpoint as checkpoint
+from training.early_stopper import EarlyStopper
 
 def create_optimizer(optimizer_type, net_parameters, optimizer_params):
     if optimizer_type == "adam":
@@ -59,6 +60,8 @@ class Model(object):
 
             self._net.to(self._device)
 
+            early_stopper = EarlyStopper(wait_steps=5)
+
             file_writer = Logger(log_dir=self._model_dir)
             tensorboard_writer = SummaryWriter(log_dir=os.path.join(self._model_dir, "tbruns"))
             inputs = next(iter(train_spec.dataset))[0].unsqueeze(0).to(self._device)
@@ -83,11 +86,16 @@ class Model(object):
                 tensorboard_writer.add_scalar("traing_loss", loss_acm.avg, global_step=self._curr_epoch)
                 
                 if self._curr_epoch % eval_spec.every_n_epochs == 0 or self._curr_epoch == train_spec.max_epochs:
-                    self._save_checkpoint(train_spec.optimizer_type, train_spec.optimizer_params)
+                    self._save_checkpoint(train_spec.optimizer_type, train_spec.optimizer_params, keep_n_last=5)
                     metrics = self.evaluate(eval_spec)
                     for metric, scalar in metrics.items():
                         file_writer.add_scalar(metric, scalar, self._curr_epoch)
                         tensorboard_writer.add_scalar(metric, scalar, global_step=self._curr_epoch)
+                    early_stopper.step(metrics.get("accuracy"))
+                
+                if early_stopper.stop:
+                    print("accuracy didn't impove for last {} eval probs, interrupting on step {}".format(5, self._curr_epoch))
+                    break
 
             tensorboard_writer.close()
             print("training complete")
@@ -113,7 +121,7 @@ class Model(object):
         
         return metrics
 
-    def _save_checkpoint(self, optimizer_type, optimizer_params):
+    def _save_checkpoint(self, optimizer_type, optimizer_params, keep_n_last=None):
         params = {
             "optimizer_type": optimizer_type,
             "optimizer_params": optimizer_params
@@ -126,3 +134,8 @@ class Model(object):
             optimizer=self._optimizer,
             params=params
         )
+
+        if keep_n_last:
+            ckpts = checkpoint.all(self._model_dir)
+            if len(ckpts) > keep_n_last:
+                checkpoint.remove(self._model_dir, ckpts[0:-1 * keep_n_last])
