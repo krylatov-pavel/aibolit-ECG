@@ -38,15 +38,16 @@ class Experiment():
                 directory = os.path.join(self._model_dir, "fold_{}".format(i))
                 self._train_model(directory, i)
 
-    def export(self, checkpoint=None, use_best=False):
+    def export(self, checkpoint=None):
         if self._k == 2:
-            net = self._load_net(self._model_dir)
+            net = self._load_net(self._model_dir, checkpoint_index=checkpoint)
         elif self._k > 2:
             models = {}
             for i in range(self._k):
                 model_dir = os.path.join(self._model_dir, "fold_{}".format(i))
                 model_name = "model{}".format(i)
-                models[model_name] = self._load_net(model_dir, checkpoint_index=checkpoint, use_best=use_best)
+                checkpoint_index = checkpoint[i] if checkpoint else None
+                models[model_name] = self._load_net(model_dir, checkpoint_index=checkpoint_index)
 
             net = Ensemble(**models)
         else:
@@ -98,15 +99,12 @@ class Experiment():
 
         model.train_and_evaluate(train_spec, eval_spec)
 
-    def _load_net(self, model_dir, checkpoint_index=None, use_best=False):
+    def _load_net(self, model_dir, checkpoint_index=None):
         net = get_class(self._config.model.name)(self._config)
 
-        if use_best:
-            raise NotImplementedError()
-        else:
-            checkpoint_index = checkpoint_index or checkpoint.last(model_dir)
-            _, model_state, _, _ = checkpoint.load(model_dir, checkpoint)
-            net.load_state_dict(model_state)
+        checkpoint_index = checkpoint_index or checkpoint.last(model_dir)
+        _, model_state, _, _ = checkpoint.load(model_dir, checkpoint_index)
+        net.load_state_dict(model_state)
 
         net.eval()
 

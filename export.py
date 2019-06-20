@@ -1,4 +1,5 @@
 import argparse
+import training.metrics.stats as stats
 from training.experiment import Experiment
 from utils.config import Config
 
@@ -18,10 +19,12 @@ def main():
 
         if args.use_best:
             print("exporting best checkpoint")
-            experiment.export(use_best=True)
+            _, checkpoints = stats.max_accuracy(config.model_dir, config.k)
+            experiment.export(checkpoint=checkpoints)
         elif args.checkpoint:
             print("exporting checkpoint ", args.checkpoint)
-            experiment.export(checkpoint=args.checkpoint)
+            checkpoints = [args.checkpoint] * config.k
+            experiment.export(checkpoint=checkpoints)
         else:
             print("exporting latest checkpoint")
             experiment.export()
