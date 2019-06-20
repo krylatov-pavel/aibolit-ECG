@@ -9,6 +9,4 @@ class Space(BaseSpace):
         }
 
     def _dataset_params_space(self):
-        return {
-            "slice_overlap": hp.uniform("slice_overlap", 0.001, 0.1)
-        }
+        return {}

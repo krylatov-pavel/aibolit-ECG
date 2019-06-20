@@ -18,13 +18,14 @@ def plot_metrics(model_dir, k):
 def max_accuracy(model_dir, k):
         if k == 2:
             logs = Logger(model_dir).read()
-            accuracy, _ = Logger.max_accuracy(logs)
+            accuracy, step = Logger.max_accuracy(logs)
         elif k > 2:
             accuracy = [None] * k
+            step = [None] * k
             for i in range(k):
                 log_dir = os.path.join(model_dir, "fold_{}".format(i))
                 log = Logger(log_dir).read(fold_num=i)
-                accuracy[i], _ = Logger.max_accuracy(log)
+                accuracy[i], step[i] = Logger.max_accuracy(log)
             accuracy = np.mean(accuracy)
 
-        return accuracy
+        return accuracy, step

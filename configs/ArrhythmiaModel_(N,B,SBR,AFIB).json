@@ -2,7 +2,7 @@
     "model": {
         "name": "models.MIT.cnn.CNN",
         "experiment": "test",
-        "max_epochs": 50,
+        "max_epochs": 30,
         "hparams": {
             "learning_rate": 0.001444422940073491,
             "conv_layers": 8,
@@ -70,5 +70,6 @@
         }
     },
     "max_to_keep": 5,
+    "params_space": "configs.hyperopt_spaces.arrhythmia_(N,B,SBR,AFIB).Space",
     "iteration": "default"
 }
