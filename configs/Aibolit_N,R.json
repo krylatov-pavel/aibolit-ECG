@@ -1,0 +1,48 @@
+{
+    "model": {
+        "name": "models.MIT.cnn_3000.CNN",
+        "experiment": "aibolit_N_R",
+        "max_epochs": 100,
+        "hparams": {
+            "learning_rate": 0.001,
+            "dropout_rate": 0.5,
+            "train_batch_size": 32,
+            "eval_batch_size": 100
+        }
+    },
+    "dataset" : {
+        "provider" : "datasets.aibolit.examples_provider.ExamplesProvider",
+        "params": {
+            "db_name": "aibolit",
+            "experiment": "3-fold_(N,R)",
+            "bypass_cache": false,
+            "slice_window": 3000,
+            "rhythm_filter": [{
+                "name": "N",
+                "rhythm": "N",
+                "overlap": 0,
+                "distribution": 1.5
+            
+            }, {
+                "name": "R",
+                "rhythm": "R",
+                "overlap": 0.3,
+                "take_last": true,
+                "distribution": 1
+            }],
+            "label_map": {
+                "N": 0,
+                "R": 1
+            },
+            "rhythm_map": {},
+            "normalize": true,
+            "resample": 0.5,     
+            "split_ratio": [0.33, 0.33, 0.34],
+            "test_set_size": 0.0,
+            "include_augmented": false
+        }
+    },
+    "max_to_keep": 5,
+    "params_space": "configs.hyperopt_spaces.arrhythmia_(N,B,SBR,AFIB).Space",
+    "iteration": "default"
+}

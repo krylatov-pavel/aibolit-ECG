@@ -18,7 +18,7 @@ class ECG(object):
         self.labels = [l.rstrip("\x00") for l in labels] 
         self.timecodes = timecodes
     
-    def get_slices(self, slice_window, rhythm_filter, rhythm_map, reverse=False, resample=False):
+    def get_slices(self, slice_window, rhythm_filter, rhythm_map=None, reverse=False, resample=False):
         """Cuts heart rhythm sequences into a set of fixed-length slices
         Args:
             slice_window: int, slice length in frames
@@ -35,21 +35,30 @@ class ECG(object):
             [("(N", 32, 1001), ...]
         """
 
+        rhythm_map = rhythm_map or {}
         slices = []
         
-        for label, start, end in zip(self.labels, self.timecodes, np.append(self.timecodes[1:], len(self.signal))):
+        for label, start, end in zip(self.labels, self.timecodes, self.timecodes[1:] + [len(self.signal)]):
             if label in rhythm_map:
                 label = rhythm_map[label]
             
-            if label in rhythm_filter:
+            match = self.__match(label, rhythm_filter)
+            if match:
                 if not resample:
-                    slices.extend(self._cut_slices(slice_window, label, start, end, reverse))
+                    slices.extend(self._cut_slices(slice_window,
+                        match.get("name"),
+                        start,
+                        end,
+                        reverse=reverse,
+                        take_last=match.get("take_last"),
+                        overlap=match.get("overlap")
+                    ))
                 else:
-                    slices.extend(self._cut_resampled_slices(slice_window, label, start, end))
+                    slices.extend(self._cut_resampled_slices(slice_window, match.get("name"), start, end))
 
         return slices
 
-    def _cut_slices(self, slice_window, label, start, end, reverse=False, overlap=0):
+    def _cut_slices(self, slice_window, label, start, end, reverse=False, overlap=0, take_last=False):
         """ Cust single heart rhythm sequence into fixed-length slices
         Args:
             start: sequence start position, inclusive
@@ -76,6 +85,17 @@ class ECG(object):
                 start=start_pos,
                 end=end_pos,
                 signal=signal)
+
+        if take_last:
+            start_pos = 0 if reverse else len(self.signal) - slice_window
+            end_pos = start_pos + slice_window
+            slices.append(Slice(
+                record=self.name,
+                rhythm=label,
+                start=start_pos,
+                end=end_pos,
+                signal=self.signal[start_pos:end_pos]
+            ))
         
         return slices
 
@@ -83,7 +103,6 @@ class ECG(object):
         """Randomly cut signal slices and downsample/interpolate it
         to the fixed slice_window length
         """
-
         resample_options = [0.7, 0.8, 0.9, 1.1, 1.2, 1.3]
         slices = []
 
@@ -111,3 +130,8 @@ class ECG(object):
             ))
 
         return slices
+
+    def __match(self, label, rythm_filter):
+        f = [f for f in rythm_filter if f.rhythm == label]
+        f = f[0] if len(f) > 0 else None
+        return f

@@ -2,8 +2,10 @@ import os
 import numpy as np
 import pandas as pd
 from datasets.utils.combinator import Combinator
+from datasets.utils.data_structures import Example
 from utils.helpers import flatten_list
 from utils.dirs import is_empty
+import utils.helpers as helpers
 
 class BaseExamplesProvider(object):
     def __init__(self, name, params):
@@ -82,6 +84,22 @@ class BaseExamplesProvider(object):
                 if not os.path.exists(os.path.join(self.examples_dir, str(i))):
                     return False
         return True
+
+    def _calc_stats(self, splits):
+        data = [s["original"] + s["augmented"] for key, s in splits.items()]
+        data = flatten_list(data)
+        data = [e.x for e in data]
+        data = np.array(data)
+
+        min = np.min(data)
+        max = np.max(data)
+        mean = np.mean(data)
+        std = np.std(data)
+
+        return min, max, mean, std
+
+    def _normalize(self, examples, mean, std):
+        return [Example(x=helpers.normalize(e.x, mean, std), y=e.y, name=e.name) for e in examples]
 
     def _split_slices(self, slices):
         """Split slices with according to slpit_ratio distribution.
