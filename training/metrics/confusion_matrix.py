@@ -1,5 +1,7 @@
 import numpy as np
 
+EPSILON = 0.0001
+
 class ConfusionMatrix(object):
     def __init__(self, predictions, labels, class_num):
         self._cm = np.zeros((class_num, class_num))
@@ -21,12 +23,12 @@ class ConfusionMatrix(object):
     def accuracy(self):
         tp = self._cm.diagonal().sum()
         total = self._cm.sum()
-        return tp / total
+        return tp / (total + EPSILON)
 
     def class_accuracy(self):
         class_total = np.sum(self._cm, axis=1)
         class_tp = self._cm.diagonal()
-        return class_tp / class_total
+        return class_tp / (class_total + EPSILON)
 
     def plot(self):
         #TODO move plot function from MIT project

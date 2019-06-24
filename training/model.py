@@ -11,7 +11,7 @@ from training.metrics.logger import Logger
 import training.checkpoint as checkpoint
 from training.early_stopper import EarlyStopper
 
-WAIT_STEPS = 5
+WAIT_STEPS = 20
 
 def create_optimizer(optimizer_type, net_parameters, optimizer_params):
     if optimizer_type == "adam":
