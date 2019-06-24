@@ -46,7 +46,7 @@ class BaseFileProvider(object):
 
         for s in slices:
             fname = self.name_generator.generate_name(
-                index=s.Index if "Index" in s else 0,
+                index=s.Index if hasattr(s, "Index") else 0,
                 rhythm=s.rhythm,
                 record=s.record,
                 start=s.start,

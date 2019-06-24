@@ -13,6 +13,8 @@ class ExamplesProvider(BaseExamplesProvider):
         super(ExamplesProvider, self).__init__("wave", params)
 
         self.normalize = params["normalize"]
+        self.fs = params["fs"]
+        self.sample_rate = params["sample_rate"]
 
     def _build_examples(self):
         """process records, creates labeled examples and saves them to disk
@@ -20,7 +22,7 @@ class ExamplesProvider(BaseExamplesProvider):
         """
         ecgs = self.__ecg_generator()
 
-        slices = [e.get_slices(self.slice_window, self.rhythm_filter) for e in ecgs]
+        slices = [e.get_slices(self.example_duration, self.rhythm_filter, sample_rate=self.sample_rate) for e in ecgs]
         slices = flatten_list(slices)
 
         splits = self.__split_slices(slices)
@@ -79,12 +81,13 @@ class ExamplesProvider(BaseExamplesProvider):
                         name=os.path.splitext(os.path.basename(f))[0],
                         signal=signal,
                         labels=[label],
-                        timecodes=[0]
+                        timecodes=[0],
+                        fs=self.fs
                     )
                     yield ecg
 
     def __split_slices(self, slices):
-        splits = [[]] * len(self.split_ratio)
+        splits = [[] for i in range(len(self.split_ratio))] 
         
         base_class = [f.name for f in self.rhythm_filter if f.distribution == 1][0]
         base_qty = sum(1 for s in slices if s.rhythm == base_class)

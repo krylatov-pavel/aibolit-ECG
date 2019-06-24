@@ -2,7 +2,7 @@
     "model": {
         "name": "models.MIT.cnn_3000.CNN",
         "experiment": "aibolit_N_R",
-        "max_epochs": 100,
+        "max_epochs": 220,
         "hparams": {
             "learning_rate": 0.001,
             "dropout_rate": 0.5,
@@ -14,9 +14,11 @@
         "provider" : "datasets.aibolit.examples_provider.ExamplesProvider",
         "params": {
             "db_name": "aibolit",
-            "experiment": "3-fold_(N,R)",
+            "experiment": "3-fold_(N,R)_downsample_500hz",
             "bypass_cache": false,
-            "slice_window": 3000,
+            "example_duration": 3,
+            "fs": 1000,
+            "sample_rate": 0.5,
             "rhythm_filter": [{
                 "name": "N",
                 "rhythm": "N",
