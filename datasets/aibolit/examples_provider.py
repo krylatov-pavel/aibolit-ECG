@@ -12,7 +12,6 @@ class ExamplesProvider(BaseExamplesProvider):
     def __init__(self, params):
         super(ExamplesProvider, self).__init__("wave", params)
 
-        self.normalize = params["normalize"]
         self.fs = params["fs"]
         self.resample_fs = params["resample_fs"]
 
@@ -37,31 +36,11 @@ class ExamplesProvider(BaseExamplesProvider):
             aug_directory = os.path.join(self.examples_dir, str(i), wp.AUGMENTED_DIR)
             create_dirs([aug_directory])
 
-    def _load_examples(self):
-        example_splits = {}
+    def _load_examples(self, path):
         wp = WavedataProvider()
-
-        for i in range(len(self.split_ratio)):
-            directory = os.path.join(self.examples_dir, str(i))
-            examples = wp.load(directory, include_augmented=True)
-
-            random.shuffle(examples[0])
-            random.shuffle(examples[1])
-
-            example_splits[i] = {
-                "original": examples[0],
-                "augmented": examples[1]
-            }
-
-        if self.normalize:
-            _, _, mean, std = self._calc_stats(example_splits)
-            for key in example_splits:
-                example_splits[key] = {
-                    "original": self._normalize(example_splits[key]["original"], mean, std),
-                    "augmented": self._normalize(example_splits[key]["augmented"], mean, std)
-                }
-        
-        return example_splits
+        examples, _ = wp.load(path, include_augmented=False)
+        random.shuffle(examples)
+        return examples
 
     def __ecg_generator(self):
         path = os.path.join("data", "database", self.db_name) 

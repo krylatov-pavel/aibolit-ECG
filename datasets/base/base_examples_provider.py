@@ -7,6 +7,7 @@ from utils.helpers import flatten_list
 from utils.dirs import is_empty
 import utils.helpers as helpers
 
+#TODO: rewrite examples provider, keep just most generic methods and basic structure, use pytorch transform for normalization
 class BaseExamplesProvider(object):
     def __init__(self, name, params):
         self.name = name
@@ -18,6 +19,7 @@ class BaseExamplesProvider(object):
         self.rhythm_filter = params["rhythm_filter"]
         self.split_ratio = params["split_ratio"]
         self.label_map = params["label_map"]
+        self.normalize = params["normalize"]
 
         self.__examples = None
 
@@ -28,15 +30,12 @@ class BaseExamplesProvider(object):
         """
         raise NotImplementedError()
 
-    def _load_examples(self):
+    def _load_examples(self, path):
         """load examples from disk
         returns: dictionary of Example namedtupe 
         {
-            {split_number}: {
-                "original": [Example, ...]
-                "augmented": [Example, ...]
-            },
-            ...
+            "original": [Example, ...]
+            "augmented": [Example, ...]
         }
         """
         raise NotImplementedError()
@@ -50,18 +49,18 @@ class BaseExamplesProvider(object):
         else:
             print("examples for current configuration already exist")
 
-    def len(self, fold_nums, include_augmented=False):
+    def len(self, fold_nums, is_train=False):
         num = 0
         examples = self.__get_examples()
-        groups = ["original"] + ["augmented"] * include_augmented
+        groups = [0] + [1] * is_train
         for i in fold_nums:
             for g in groups:
                 num += len(examples[i][g])
         return num
 
-    def get_example(self, index, fold_nums, include_augmented=False):
+    def get_example(self, index, fold_nums, is_train=False):
         examples = self.__get_examples()
-        groups = ["original"] + ["augmented"] * include_augmented
+        groups = [0] + [1] * is_train
         for i in fold_nums:
             for g in groups:
                 group_length = len(examples[i][g])
@@ -85,8 +84,37 @@ class BaseExamplesProvider(object):
                     return False
         return True
 
+    def _load_dataset(self):
+        example_splits = {}
+        
+        for i in range(len(self.split_ratio)):
+            directory = os.path.join(self.examples_dir, str(i))
+            example_splits[i] = self._load_examples(directory)
+
+        if self.normalize:
+            _, _, mean, std = self._calc_stats(example_splits)
+            for key in example_splits:
+                example_splits[key] = self._normalize(example_splits[key], mean, std)
+
+        for key in example_splits:
+            example_splits[key] = self._equalize(example_splits[key])
+        
+        return example_splits
+
+    def _equalize(self, examples):
+        equalized = []
+        remaining = []
+        classes_sr = pd.Series([e.y for e in examples])
+        count_min = classes_sr.value_counts()[-1]
+        for y in classes_sr.unique():
+            class_examples = [e for e in examples if e.y == y]
+            equalized.extend(class_examples[:count_min])
+            remaining.extend(class_examples[count_min:])
+
+        return equalized, remaining
+
     def _calc_stats(self, splits):
-        data = [s["original"] + s["augmented"] for key, s in splits.items()]
+        data = [s for key, s in splits.items()]
         data = flatten_list(data)
         data = [e.x for e in data]
         data = np.array(data)
@@ -127,60 +155,6 @@ class BaseExamplesProvider(object):
         
         return splits_list
 
-    def _split_aug_slices(self, slices, original_splits):
-        """Split augmented slices according distribution of original slices.
-        Args:
-            slices: list of Slice namedtuple
-            original_splits: k-length list of splits, each split contains slices
-        Returns:
-            list of shape [k, n_slices]
-        """
-        aug_splits = [None] * len(original_splits)
-
-        df_columns = ["record", "rhythm", "start", "end", "signal"]
-        aug_slices_df = pd.DataFrame(slices, columns=df_columns)
-
-        for i, s in enumerate(original_splits):
-            slices_df = pd.DataFrame(s, columns=["index"] + df_columns)
-
-            aug_split_slices = []
-            aug_splits[i] = aug_split_slices
-
-            for rhythm, group in slices_df.groupby("rhythm"):
-                records = group["record"].unique()
-
-                include = aug_slices_df[(aug_slices_df["rhythm"] == rhythm) & (aug_slices_df["record"].isin(records))]
-
-                aug_split_slices.extend(include.itertuples())
-
-
-            #equalize distribution of classes
-            """
-            orig_distribution = slices_df["rhythm"].value_counts().sort_values().iteritems()
-            orig_distribution = list(orig_distribution)
-
-            min_class, min_count = orig_distribution[0]
-
-            min_class_slices = [s for s in aug_split_slices if s.rhythm == min_class]
-            aug_splits[i].extend(min_class_slices)
-
-            min_class_slices_num = min_count + len(min_class_slices) #original + augmented
-
-            for j in range(1, len(orig_distribution)):
-                class_name, class_count = orig_distribution[j]
-
-                take = min_class_slices_num - class_count
-                if take > 0:
-                    class_slices = [s for s in aug_split_slices if s.rhythm == class_name]
-                    random.shuffle(class_slices)
-
-                    take = min_class_slices_num - class_count
-
-                    aug_splits[i].extend(class_slices[:take])
-            """
-
-        return aug_splits
-
     def __build_split_map(self, df):
         """
         Returns: dictionary with rhythm type keys, and k-length 2d list values, e.g:
@@ -203,7 +177,7 @@ class BaseExamplesProvider(object):
         if not self.__examples:
             if self.examples_exists:
                 print("loading examples...")
-                self.__examples = self._load_examples()
+                self.__examples = self._load_dataset()
                 print("loading examples complete")
             else:
                 raise ValueError("Examples not exist")

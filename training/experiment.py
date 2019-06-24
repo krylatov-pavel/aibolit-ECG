@@ -72,7 +72,7 @@ class Experiment():
 
         train_spec = TrainSpec(
             max_epochs=self._max_epochs,
-            dataset=Dataset(self._examples_provider, self._get_fold_nums(TRAIN, fold_num)),
+            dataset=Dataset(self._examples_provider, self._get_fold_nums(TRAIN, fold_num), is_train=True),
             batch_size=32,
             optimizer_type="adam",
             optimizer_params={
