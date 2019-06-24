@@ -14,7 +14,7 @@ class ExamplesProvider(BaseExamplesProvider):
 
         self.normalize = params["normalize"]
         self.fs = params["fs"]
-        self.sample_rate = params["sample_rate"]
+        self.resample_fs = params["resample_fs"]
 
     def _build_examples(self):
         """process records, creates labeled examples and saves them to disk
@@ -22,7 +22,7 @@ class ExamplesProvider(BaseExamplesProvider):
         """
         ecgs = self.__ecg_generator()
 
-        slices = [e.get_slices(self.example_duration, self.rhythm_filter, sample_rate=self.sample_rate) for e in ecgs]
+        slices = [e.get_slices(self.example_duration, self.rhythm_filter, resample_fs=self.resample_fs) for e in ecgs]
         slices = flatten_list(slices)
 
         splits = self.__split_slices(slices)

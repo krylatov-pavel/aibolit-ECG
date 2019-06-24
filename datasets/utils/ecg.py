@@ -19,7 +19,7 @@ class ECG(object):
         self.timecodes = timecodes
         self.fs = fs
     
-    def get_slices(self, slice_duration, rhythm_filter, rhythm_map=None, reverse=False, sample_rate=1.0):
+    def get_slices(self, slice_duration, rhythm_filter, rhythm_map=None, reverse=False, resample_fs=None):
         """Cuts heart rhythm sequences into a set of fixed-length slices
         Args:
             slice_window: int, slice length in frames
@@ -52,11 +52,11 @@ class ECG(object):
                     reverse=reverse,
                     take_last=match.get("take_last"),
                     overlap=match.get("overlap"),
-                    sample_rate=sample_rate
+                    resample_fs=resample_fs
                 ))
         return slices
 
-    def _cut_slices(self, slice_duration, label, start, end, reverse=False, overlap=0, take_last=False, sample_rate=1.0):
+    def _cut_slices(self, slice_duration, label, start, end, reverse=False, overlap=0, take_last=False, resample_fs=None):
         """ Cust single heart rhythm sequence into fixed-length slices
         Args:
             start: sequence start position, inclusive
@@ -66,10 +66,11 @@ class ECG(object):
         slice_window = int(slice_duration * self.fs)
         signal = list(self.signal[start:end])
 
-        if sample_rate != 1.0:
-            slice_window = int(slice_duration * self.fs * sample_rate)
+        if resample_fs is not None and resample_fs != self.fs:
+            resample_rate = resample_fs / self.fs
+            slice_window = int(slice_duration * self.fs * resample_rate)
             resample_fn = scipy.interpolate.interp1d(np.arange(len(signal)), signal)
-            signal_len = int(len(signal) * sample_rate)
+            signal_len = int(len(signal) * resample_rate)
             signal = resample_fn(np.linspace(0, len(self.signal) - 1, signal_len))
 
         length = len(signal)
