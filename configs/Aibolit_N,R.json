@@ -4,16 +4,15 @@
         "experiment": "aibolit_N_R_generic",
         "max_epochs": 220,
         "hparams": {
-            "learning_rate": 0.001,
-            "dropout_rate": 0.5,
+            "learning_rate": 0.00033,
+            "dropout": 0.55,
             "train_batch_size": 32,
             "eval_batch_size": 100,
-            "filters_num": 64,
+            "filters_num": 48,
             "filters_step": 32,
-            "conv_kernel_size": 5,
-            "conv_layer_num": 3,
-            "dropout": 0.4,
-            "fc_units": 128
+            "conv_kernel_size": 7,
+            "conv_layer_num": 7,
+            "fc_units": 40
         }
     },
     "dataset" : {
@@ -50,6 +49,6 @@
         }
     },
     "max_to_keep": 20,
-    "params_space": "configs.hyperopt_spaces.arrhythmia_(N,B,SBR,AFIB).Space",
-    "iteration": "default"
+    "params_space": "configs.hyperopt_spaces.aibolit_(N,R).Space",
+    "iteration": "40"
 }
