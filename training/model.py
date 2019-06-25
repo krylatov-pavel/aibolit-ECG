@@ -75,6 +75,12 @@ class Model(object):
             inputs = next(iter(train_spec.dataset))[0].unsqueeze(0).to(self._device)
             tensorboard_writer.add_graph(self._net, input_to_model=inputs)
 
+            #evaluate initial accuracy
+            metrics = self.evaluate(eval_spec)
+            for metric, scalar in metrics.items():
+                file_writer.add_scalar(metric, scalar, 0)
+                tensorboard_writer.add_scalar(metric, scalar, global_step=0)
+
             train_loader = data.DataLoader(train_spec.dataset, batch_size=train_spec.batch_size, shuffle=True)
             while self._curr_epoch < train_spec.max_epochs and not self._early_stopper.stop:
                 self._curr_epoch += 1
