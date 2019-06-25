@@ -6,6 +6,9 @@ import pandas as pd
 import training.metrics.stats as stats
 from utils.config import Config
 
+def is_training_complete(model_dir):
+    return os.path.isfile(os.path.join(model_dir, "plot.png"))
+
 def get_search_params(model_dir):
     fpath = os.path.join(model_dir, "params.json")
     if os.path.isfile(fpath):
@@ -32,6 +35,7 @@ def main():
         return
 
     dirs = (os.path.join(path, d) for d in os.listdir(path))
+    dirs = (d for d in dirs if is_training_complete(d))
     confs = (os.path.join(d, "config.json") for d in dirs if os.path.isdir(d))
     confs = (c for c in confs if os.path.isfile(c))
     confs = (Config(c) for c in confs)
