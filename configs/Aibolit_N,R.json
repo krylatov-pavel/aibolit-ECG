@@ -1,7 +1,7 @@
 {
     "model": {
         "name": "models.aibolit.cnn_generic.CNN",
-        "experiment": "aibolit_N_R_generic",
+        "experiment": "aibolit_N_R_generic_2fold_not_mixing_wtest",
         "max_epochs": 220,
         "hparams": {
             "learning_rate": 0.00033,
@@ -16,26 +16,27 @@
         }
     },
     "dataset" : {
-        "provider" : "datasets.aibolit.examples_provider.ExamplesProvider",
+        "dataset_provider" : "datasets.aibolit.file_dataset_provider.FileDatasetProvider",
+        "file_provider" : "datasets.common.wavedata_provider.WaveDataProvider",
         "params": {
-            "db_name": "aibolit",
-            "experiment": "4-fold_(N,R)_250hz",
+            "source_name": "aibolit",
+            "experiment": "2-fold_(N,R)_250hz_not_mixing_with_test",
             "bypass_cache": false,
             "example_duration": 3,
             "fs": 1000,
             "resample_fs": 250,
-            "rhythm_filter": [{
+            "class_settings": [{
                 "name": "N",
                 "rhythm": "N",
-                "overlap": 0.2,
-                "distribution": 2.5
+                "overlap": 0,
+                "equalize_distribution": 2
             
             }, {
                 "name": "R",
                 "rhythm": "R",
-                "overlap": 0.6,
+                "overlap": 0,
                 "take_last": true,
-                "distribution": 1
+                "equalize_distribution": 1
             }],
             "label_map": {
                 "N": 0,
@@ -43,12 +44,12 @@
             },
             "rhythm_map": {},
             "normalize": true,
-            "split_ratio": [0.25, 0.25, 0.25, 0.25],
-            "test_set_size": 0.0,
+            "split_ratio": [0.77, 0.18],
+            "test_set_size": 0.1,
             "include_augmented": false
         }
     },
     "max_to_keep": 20,
     "params_space": "configs.hyperopt_spaces.aibolit_(N,R).Space",
-    "iteration": "40"
+    "iteration": "default"
 }
