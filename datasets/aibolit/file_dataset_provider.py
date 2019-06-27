@@ -10,7 +10,7 @@ class FileDatasetProvider(BaseDatasetProvider):
         super(FileDatasetProvider, self).__init__(params, WavedataProvider())
 
         self._fs = params.fs
-        self._resample_fs = params.resample_fs
+        self._resample_fs = params.get("resample_fs")
         self._example_duration = params.example_duration
 
     ###abstract methods implementation
@@ -34,21 +34,26 @@ class FileDatasetProvider(BaseDatasetProvider):
         return metadata
 
     def _get_examples(self, source_id, metadata):
-        label = metadata[0].label
+        examples = []
+
         fname = "{}.json".format(source_id)
-        fpath = os.path.join("data", "database", self._source_name, label, fname) 
+        for label in set(m.label for m in metadata):
+            fpath = os.path.join("data", "database", self._source_name, label, fname) 
 
-        with open(fpath, "r") as json_file:
-            signal = json.load(json_file)
-            ecg = ECG(
-                name=source_id,
-                labels=[label],
-                timecodes=[0],
-                fs=self._fs,
-                signal = signal
-            )
+            with open(fpath, "r") as json_file:
+                signal = json.load(json_file)
+                ecg = ECG(
+                    name=source_id,
+                    labels=[label],
+                    timecodes=[0],
+                    fs=self._fs,
+                    signal = signal
+                )
 
-        return ecg.get_examples(metadata, resample_fs=self._resample_fs)
+            label_metadata = [m for m in metadata if m.label == label]
+            examples.extend(ecg.get_examples(label_metadata, resample_fs=self._resample_fs))
+        
+        return examples
     
     ###
 
