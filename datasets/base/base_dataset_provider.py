@@ -1,7 +1,9 @@
 import os
 import numpy as np
 import pandas as pd
+import json
 import datasets.utils.equalizer as eq
+from datasets.utils.running_statistics import RunningStatistics
 import utils.dirs as dirs
 
 class BaseDatasetProvider(object):
@@ -30,10 +32,8 @@ class BaseDatasetProvider(object):
 
     @property
     def stats(self):
-        # calc mean, std using rolling avg,
-        # print in file, read from file if file exists
-        # read   file with stats, return 
-        raise NotImplementedError()
+        with open(os.path.join(self.examples_dir, "stats.json"), "w") as f:
+            return json.load(f)
 
     def generate(self):
         if not self.examples_exists:
@@ -59,14 +59,21 @@ class BaseDatasetProvider(object):
             folders[str(i+1)] = examples_meta
 
             #get examples data and serialize to disk
+            stats_calculator = RunningStatistics()
             for folder, examples_meta in folders.items():
                 source_ids = set(m.source_id for m in examples_meta)
                 for source_id in source_ids:
                     metadata_group = [m for m in examples_meta if m.source_id == source_id]
                     examples = self._get_examples(source_id, metadata_group)
+                    for e in examples:
+                        stats_calculator.next(e.data)
                     path = os.path.join(self.examples_dir, folder)
                     self._file_provider.save(examples, path)
-            
+
+            stats = {"mean": stats_calculator.mean, "std": stats_calculator.variance }
+            with open(os.path.join(self.examples_dir, "stats.json"), "w") as f:
+                json.dump(stats, f, sort_keys=False, indent=4)
+                        
             print("generating examples complete")
         else:
             print("examples for current configuration already exist")
