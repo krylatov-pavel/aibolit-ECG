@@ -1,8 +1,7 @@
 {
     "model": {
         "name": "models.aibolit.cnn_generic.CNN",
-        "experiment": "aibolit_N_R_AV_generic_4fold",
-        "max_epochs": 220,
+        "experiment": "aibolit_N_R_AV_generic_2fold",
         "hparams": {
             "learning_rate": 0.00033,
             "dropout": 0.55,
@@ -23,7 +22,7 @@
             "bypass_cache": false,
             "example_duration": 3,
             "fs": 1000,
-            "resample_fs": 250,
+            "resample_fs": 250,            
             "class_settings": [{
                 "name": "N",
                 "rhythm": "N",
@@ -33,13 +32,13 @@
             }, {
                 "name": "R",
                 "rhythm": "R",
-                "overlap": 0.5,
+                "overlap": 0.4,
                 "take_last": true,
                 "equalize_distribution": 1
             }, {
                 "name": "AV",
                 "rhythm": "AV",
-                "overlap": 0.5,
+                "overlap": 0.4,
                 "take_last": true,
                 "equalize_distribution": false
             }],
@@ -50,12 +49,15 @@
             },
             "rhythm_map": {},
             "normalize": true,
-            "split_ratio": [0.25, 0.25, 0.25, 0.25],
+            "split_ratio": [0.8, 0.2],
             "test_set_size": 0.05,
             "include_augmented": false
         }
     },
-    "max_to_keep": 20,
+    "max_epochs": 220,
+    "keep_n_checkpoints": 5,
+    "eval_every_n_epochs": 3,
+    "wait_improvement_n_evals": 5,
     "params_space": "configs.hyperopt_spaces.aibolit_(N,R).Space",
-    "iteration": "default"
+    "iteration": "7"
 }

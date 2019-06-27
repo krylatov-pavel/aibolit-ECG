@@ -23,12 +23,16 @@ class Experiment():
         self._model_dir = model_dir
         self._name = config.model.experiment
         self._k = len(config.dataset.params.split_ratio)
-        self._iteration = config["iteration"]
-        self._max_epochs = config.model["max_epochs"]
-        self._learning_rate = config.model.hparams["learning_rate"]
-        self._class_num = len(config.dataset.params["label_map"])
-        self._label_map = config.dataset.params["label_map"]
-        self._max_to_keep = config["max_to_keep"]
+
+        self._learning_rate = config.model.hparams.learning_rate
+        self._class_num = len(config.dataset.params.label_map)
+        self._label_map = config.dataset.params.label_map
+
+        self._iteration = config.iteration
+        self._max_epochs = config.max_epochs
+        self._keep_n_checkpoints = config.keep_n_checkpoints
+        self._eval_every_n_epochs = config.eval_every_n_epochs
+        self._wait_improvement_n_evals = config.wait_improvement_n_evals
 
     def run(self):
         #regular experiment
@@ -93,7 +97,7 @@ class Experiment():
             optimizer_params={
                 "lr": self._learning_rate
             },
-            max_to_keep=self._max_to_keep
+            wait_improvement_n_evals=self._wait_improvement_n_evals
         )
 
         eval_examples = ExamplesProvider(
@@ -107,8 +111,9 @@ class Experiment():
             class_num=self._class_num,
             dataset=Dataset(eval_examples),
             batch_size=100,
-            every_n_epochs=5,
-            class_map={value: key for key, value in self._label_map.items()}
+            every_n_epochs=self._eval_every_n_epochs,
+            class_map={value: key for key, value in self._label_map.items()},
+            keep_n_checkpoints=self._keep_n_checkpoints
         )
 
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")

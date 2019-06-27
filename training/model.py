@@ -11,8 +11,6 @@ from training.metrics.logger import Logger
 import training.checkpoint as checkpoint
 from training.early_stopper import EarlyStopper
 
-WAIT_STEPS = 20
-
 def create_optimizer(optimizer_type, net_parameters, optimizer_params):
     if optimizer_type == "adam":
         return optim.Adam(net_parameters, **optimizer_params)
@@ -45,7 +43,8 @@ class Model(object):
 
         best_metric_value = params.get("best_metric_value")
         steps_since_last_improvemet = params.get("steps_since_last_improvemet")
-        early_stopper = EarlyStopper(WAIT_STEPS, metric_value=best_metric_value, steps_since_last_improvemet=steps_since_last_improvemet)
+        wait_improvement_n_evals = params.get("wait_improvement_n_evals")
+        early_stopper = EarlyStopper(wait_improvement_n_evals, metric_value=best_metric_value, steps_since_last_improvemet=steps_since_last_improvemet)
 
         return Model(net, model_dir, device=device, optimizer=optimizer, curr_epoch=epoch, early_stopper=early_stopper)
 
@@ -63,7 +62,7 @@ class Model(object):
                 )
             
             if not self._early_stopper:
-                self._early_stopper = EarlyStopper(WAIT_STEPS)
+                self._early_stopper = EarlyStopper(train_spec.wait_improvement_n_evals)
 
             loss_fn = nn.CrossEntropyLoss()
             loss_acm = RunningAvg(0.0)
@@ -110,13 +109,17 @@ class Model(object):
                         optimizer_params=train_spec.optimizer_params,
                         best_metric_value=self._early_stopper.best_metric_value,
                         steps_since_last_improvemet=self._early_stopper.steps_since_last_improvemet,
-                        keep_n_last=train_spec.max_to_keep
+                        wait_improvement_n_evals=train_spec.wait_improvement_n_evals
+                    )
+                    self._clear_checkpoints(
+                        best_checkpoint=self._curr_epoch - self._early_stopper.steps_since_last_improvemet * eval_spec.every_n_epochs,
+                        keep_n_last=eval_spec.keep_n_checkpoints
                     )
 
             tensorboard_writer.close()
             
             if self._early_stopper.stop:
-                print("accuracy didn't improve for last {} eval probs, interrupted on epoch {}".format(WAIT_STEPS, self._curr_epoch))
+                print("accuracy didn't improve for last {} eval probs, interrupted on epoch {}".format(train_spec.wait_improvement_n_evals, self._curr_epoch))
             elif self._curr_epoch >= train_spec.max_epochs:
                 print("reached max_epoch steps: {}".format(train_spec.max_epochs))
         else:
@@ -141,12 +144,13 @@ class Model(object):
         
         return metrics
 
-    def _save_checkpoint(self, optimizer_type, optimizer_params, best_metric_value, steps_since_last_improvemet, keep_n_last=None):
+    def _save_checkpoint(self, optimizer_type, optimizer_params, best_metric_value, steps_since_last_improvemet, wait_improvement_n_evals):
         params = {
             "optimizer_type": optimizer_type,
             "optimizer_params": optimizer_params,
             "best_metric_value": best_metric_value,
-            "steps_since_last_improvemet": steps_since_last_improvemet
+            "steps_since_last_improvemet": steps_since_last_improvemet,
+            "wait_improvement_n_evals": wait_improvement_n_evals
         }
 
         checkpoint.save(
@@ -157,7 +161,8 @@ class Model(object):
             params=params
         )
 
-        if keep_n_last:
-            ckpts = checkpoint.all(self._model_dir)
-            if len(ckpts) > keep_n_last:
-                checkpoint.remove(self._model_dir, ckpts[0:-1 * keep_n_last])
+    def _clear_checkpoints(self, best_checkpoint, keep_n_last):
+        ckpts = checkpoint.all(self._model_dir)
+        if len(ckpts) > keep_n_last:
+            checkpoints_to_remove = list(set(ckpts[0:-1 * keep_n_last]) - set([best_checkpoint]))
+            checkpoint.remove(self._model_dir, checkpoints_to_remove)
