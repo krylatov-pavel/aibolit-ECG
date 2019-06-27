@@ -76,7 +76,7 @@ class BaseDatasetProvider(object):
             return [os.path.join(self.examples_dir, "0")]
         elif self._k > 2:
             folders = set(range(self._k)) - set((eval_fold_number,))
-            return [os.path.join(self.examples_dir, f) for f in folders]
+            return [os.path.join(self.examples_dir, str(f)) for f in folders]
         else:
             raise ValueError("Invalid k")
 
@@ -84,7 +84,7 @@ class BaseDatasetProvider(object):
         if self._k == 2:
             return [os.path.join(self.examples_dir, "1")]
         elif self._k > 2:
-            return [os.path.join(self.examples_dir, eval_fold_number)]
+            return [os.path.join(self.examples_dir, str(eval_fold_number))]
         else:
             raise ValueError("Invalid k")
 

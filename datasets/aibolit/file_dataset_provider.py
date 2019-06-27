@@ -16,7 +16,8 @@ class FileDatasetProvider(BaseDatasetProvider):
     ###abstract methods implementation
 
     def _dataset_flavor(self):
-        classes = ",".join(["{}{}".format("" if s.equalize_distribution == 1 else s.equalize_distribution, c) for c, s in self._class_settings.items()])
+        classes = ",".join(["{}{}".format("" if (not s.equalize_distribution) or s.equalize_distribution == 1 else s.equalize_distribution, c)
+            for c, s in self._class_settings.items()])
         return "{}fold_{}s_({})_{}hz".format(
             self._k,
             self._example_duration,

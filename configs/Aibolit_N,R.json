@@ -1,7 +1,7 @@
 {
     "model": {
         "name": "models.aibolit.cnn_generic.CNN",
-        "experiment": "aibolit_N_R_generic_2fold_not_mixing_wtest",
+        "experiment": "aibolit_N_R_AV_generic_4fold",
         "max_epochs": 220,
         "hparams": {
             "learning_rate": 0.00033,
@@ -17,7 +17,7 @@
     },
     "dataset" : {
         "dataset_provider" : "datasets.aibolit.file_dataset_provider.FileDatasetProvider",
-        "file_provider" : "datasets.common.wavedata_provider.WaveDataProvider",
+        "file_provider" : "datasets.common.wavedata_provider.WavedataProvider",
         "params": {
             "source_name": "aibolit",
             "bypass_cache": false,

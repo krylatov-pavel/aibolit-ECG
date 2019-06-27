@@ -100,6 +100,7 @@ class Experiment():
             folders=self._dataset_provider.eval_set_path(fold_num),
             file_reader=self._file_provider,
             label_map=self._label_map,
+            equalize_labels=True
         )
 
         eval_spec = EvalSpec(
