@@ -93,7 +93,7 @@ class BaseDatasetProvider(object):
 
     def __find_best_split_point(self, metadata, split_point):
         def is_valid_split(metadata, split_point):
-           return metadata[split_point].source_id != metadata[split_point + 1].source_id 
+           return metadata[split_point].source_id != metadata[split_point - 1].source_id 
 
         if is_valid_split(metadata, split_point):
             return split_point, True
