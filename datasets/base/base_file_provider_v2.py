@@ -41,22 +41,20 @@ class BaseFileProvider(object):
         Returns:
             None
         """
-        if os.path.exists(directory):
-            clear_dir(directory)
-        else:
+        if not os.path.exists(directory):
             create_dirs([directory])
 
         save_file_fn, dispose_fn = self._build_save_file_fn(directory, params)
 
-        for s in examples:
+        for e in examples:
             fname = self.name_generator.generate_name(
-                label=s.label,
-                source_id=s.source_id,
-                start=s.start,
-                end=s.end
+                label=e.metadata.label,
+                source_id=e.metadata.source_id,
+                start=e.metadata.start,
+                end=e.metadata.end
             )
             
-            save_file_fn(s.signal, fname)
+            save_file_fn(e.data, fname)
         
         dispose_fn()
 

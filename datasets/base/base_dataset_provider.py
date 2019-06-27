@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 import datasets.utils.equalizer as eq
+import utils.dirs as dirs
 
 class BaseDatasetProvider(object):
     def __init__(self, params, file_provider):
@@ -38,6 +39,8 @@ class BaseDatasetProvider(object):
         if not self.examples_exists:
             print("generating examples...")
 
+            dirs.clear_dir(self.examples_dir)
+
             #get examples metadata
             examples_meta = self._get_examples_meta()
             
@@ -53,7 +56,7 @@ class BaseDatasetProvider(object):
                 first_fraction = self._split_ratio[i] / sum(self._split_ratio[i:])
                 folders[str(i)], examples_meta = self.__split_examples(examples_meta, first_fraction=first_fraction)
 
-            folders[i+1] = examples_meta
+            folders[str(i+1)] = examples_meta
 
             #get examples data and serialize to disk
             for folder, examples_meta in folders.items():
@@ -62,7 +65,7 @@ class BaseDatasetProvider(object):
                     metadata_group = [m for m in examples_meta if m.source_id == source_id]
                     examples = self._get_examples(source_id, metadata_group)
                     path = os.path.join(self.examples_dir, folder)
-                    self._file_provider.save(examples , path)
+                    self._file_provider.save(examples, path)
             
             print("generating examples complete")
         else:
@@ -93,7 +96,7 @@ class BaseDatasetProvider(object):
            return metadata[split_point].source_id != metadata[split_point + 1].source_id 
 
         if is_valid_split(metadata, split_point):
-            return split_point
+            return split_point, True
         else:
             found = False
             for distance in range(1, max(split_point, len(metadata) - split_point - 1)):
@@ -126,8 +129,8 @@ class BaseDatasetProvider(object):
             if not found:
                 print("Warning: couldn't find valid split, class {}, ratio {}:{2}".format(label, first_fraction, 1-first_fraction))
 
-            first_group.extend(metadata[:split_point])
-            second_group.extend(metadata[split_point:])
+            first_group.extend(class_metadata[:split_point])
+            second_group.extend(class_metadata[split_point:])
 
         return first_group, second_group
 

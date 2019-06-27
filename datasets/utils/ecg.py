@@ -1,7 +1,6 @@
 import numpy as np
 import random
 import scipy.interpolate
-from datasets.utils.data_structures import Slice
 from datasets.utils.example_metadata import ExampleMetadata
 from datasets.utils.example import Example
 
@@ -34,7 +33,7 @@ class ECG(object):
                     start=start,
                     end=end,
                     overlap=match.overlap,
-                    take_last=match.take_last
+                    take_last=match.get("take_last")
                 ))
 
         return metadata
@@ -49,9 +48,9 @@ class ECG(object):
             if resample_rate != 1:
                 resample_fn = scipy.interpolate.interp1d(np.arange(len(signal)), signal)
                 signal_len = int(len(signal) * resample_rate)
-                signal = resample_fn(np.linspace(0, len(self.signal) - 1, signal_len))
+                signal = resample_fn(np.linspace(0, len(signal) - 1, signal_len))
 
-            examples[i] = Example(signal, metadata)
+            examples[i] = Example(signal, meta)
 
         return examples
     
@@ -81,7 +80,7 @@ class ECG(object):
         if take_last:
             start_pos = self.signal_len - slice_window
             end_pos = start_pos + slice_window
-            slices.append(Slice(
+            slices.append(ExampleMetadata(
                 label=label,
                 source_id=self.name,
                 start=start_pos,

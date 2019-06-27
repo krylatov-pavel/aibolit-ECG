@@ -17,7 +17,7 @@ class FileDatasetProvider(BaseDatasetProvider):
 
     def _dataset_flavor(self):
         classes = ",".join(["{}{}".format("" if s.equalize_distribution == 1 else s.equalize_distribution, c) for c, s in self._class_settings.items()])
-        return "{}fold_{}s_{}_{}hz".format(
+        return "{}fold_{}s_({})_{}hz".format(
             self._k,
             self._example_duration,
             classes,
@@ -33,14 +33,15 @@ class FileDatasetProvider(BaseDatasetProvider):
         return metadata
 
     def _get_examples(self, source_id, metadata):
+        label = metadata[0].label
         fname = "{}.json".format(source_id)
-        fpath = os.path.join("data", "database", self._source_name, metadata.label, fname) 
+        fpath = os.path.join("data", "database", self._source_name, label, fname) 
 
         with open(fpath, "r") as json_file:
             signal = json.load(json_file)
             ecg = ECG(
                 name=source_id,
-                labels=[metadata.label],
+                labels=[label],
                 timecodes=[0],
                 fs=self._fs,
                 signal = signal
