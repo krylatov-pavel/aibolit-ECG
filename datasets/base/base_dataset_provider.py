@@ -47,14 +47,14 @@ class BaseDatasetProvider(object):
             #split into k folds and TEST set
             folders = {}
             if self._test_set_size:
-                folders["TEST"], examples_meta = self.__split_examples(examples_meta, first_fraction=self._test_set_size)
+                folders["TEST"], examples_meta = self._split_examples(examples_meta, first_fraction=self._test_set_size)
                 folders["TEST"] = eq.equalize(folders["TEST"], key_fn=lambda m: m.label, distribution={key: 1 for key in self._class_distribution})
 
             examples_meta = eq.equalize(examples_meta, key_fn=lambda m: m.label, distribution=self._class_distribution)
 
             for i in range(self._k - 1):
                 first_fraction = self._split_ratio[i] / sum(self._split_ratio[i:])
-                folders[str(i)], examples_meta = self.__split_examples(examples_meta, first_fraction=first_fraction)
+                folders[str(i)], examples_meta = self._split_examples(examples_meta, first_fraction=first_fraction)
 
             folders[str(i+1)] = examples_meta
 
@@ -114,7 +114,7 @@ class BaseDatasetProvider(object):
 
             return split_point, found
 
-    def __split_examples(self, metadata, first_fraction):
+    def _split_examples(self, metadata, first_fraction):
         first_group = []
         second_group = []
 

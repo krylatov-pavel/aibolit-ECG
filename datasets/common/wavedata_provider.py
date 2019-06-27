@@ -1,7 +1,7 @@
 import csv
 import os
 import numpy as np
-from datasets.base.base_file_provider_v2 import BaseFileProvider
+from datasets.base.base_file_provider import BaseFileProvider
 
 class WavedataProvider(BaseFileProvider):
     def __init__(self):

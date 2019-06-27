@@ -1,5 +1,5 @@
 import re
-from datasets.utils.example_metadata import ExampleMetadata
+from datasets.utils.data_structures import ExampleMetadata
 
 class NameGenerator(object):
     def __init__(self, file_extension):

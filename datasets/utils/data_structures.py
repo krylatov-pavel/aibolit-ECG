@@ -2,17 +2,14 @@ from collections import namedtuple
 
 Record = namedtuple("Record", ["signal", "annotation"])
 
-_slice_meta = ["record", "rhythm", "start", "end"]
-SliceMeta = namedtuple("SliceMeta", _slice_meta)
-Slice = namedtuple("Slice", _slice_meta + ["signal"])
+class ExampleMetadata(object):
+    def __init__(self, label, source_id, start, end):
+        self.label = label
+        self.source_id = source_id
+        self.start = start
+        self.end = end
 
-Scale = namedtuple("Scale", ["min", "max"])
-CropMode = namedtuple("CropMode", ["vertical", "horizontal"])
-Example = namedtuple("Example", ["x", "y", "name"])
-
-class Crop:
-    TOP = "top"
-    BOTTOM = "bottom"
-    LEFT = "left"
-    RIGHT = "right"
-    CENTER = "center"
+class Example(object):
+    def __init__(self, data, metadata):
+        self.data = data
+        self.metadata = metadata

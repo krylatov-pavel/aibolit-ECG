@@ -1,8 +1,8 @@
 import numpy as np
 import random
 import scipy.interpolate
-from datasets.utils.example_metadata import ExampleMetadata
-from datasets.utils.example import Example
+from datasets.utils.data_structures import ExampleMetadata
+from datasets.utils.data_structures import Example
 
 class ECG(object):
     def __init__(self, name, labels, timecodes, fs, signal=None, signal_len=None):

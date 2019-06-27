@@ -1,32 +1,35 @@
 import os
 from utils.dirs import clear_dir, create_dirs
 from datasets.utils.name_generator import NameGenerator
-from datasets.utils.data_structures import Example
 
 class BaseFileProvider(object):
     def __init__(self, extension):
-        self.AUGMENTED_DIR = "augmented"
-        self.TEST_DIR = "testset"
-        
         self.FILE_EXTENSION = extension
         self.name_generator = NameGenerator(extension)
 
-    def load(self, directory, include_augmented=False):
-        """Loads examples from disk
-        Args:
-            directory: target directory
-            include_augmented: if True, return augmented examples as secod element of returned list
+    def list(self, directories):
+        """Loads examples
         Returns:
-            ([regular_examples], <[augmented_examples]>), elemets are Example namedpuples
+            list of file paths along with metadata
         """
-        examples = self._load_dir(directory)
-        examples_aug = []
-        if include_augmented:
-            examples_aug = self._load_dir(os.path.join(directory, self.AUGMENTED_DIR))
+        def is_metadata_valid(name, metadata):
+            if not metadata:
+                print("Skipped file {}, can't parse name".format(name))
+            return bool(metadata)
 
-        return (examples, examples_aug)
+        result = []
 
-    def save(self, slices, directory, params=None):
+        for directory in directories:
+            fnames = (os.path.join(directory, f) for f in os.listdir(directory))
+            fnames = (f for f in fnames if os.path.isfile(f))
+            files = ((f, self.name_generator.get_metadata(os.path.basename(f))) for f in fnames)
+            files = [f for f in files if is_metadata_valid(*f)]
+            
+            result.extend(files)
+
+        return result
+
+    def save(self, examples, directory, params=None):
         """Converts slices to proper file format and saves them to disc
         Args:
             slices: 2d list of slices,
@@ -37,60 +40,34 @@ class BaseFileProvider(object):
         Returns:
             None
         """
-        if os.path.exists(directory):
-            clear_dir(directory)
-        else:
+        if not os.path.exists(directory):
             create_dirs([directory])
 
         save_file_fn, dispose_fn = self._build_save_file_fn(directory, params)
 
-        for s in slices:
+        for e in examples:
             fname = self.name_generator.generate_name(
-                index=s.Index if hasattr(s, "Index") else 0,
-                rhythm=s.rhythm,
-                record=s.record,
-                start=s.start,
-                end=s.end
+                label=e.metadata.label,
+                source_id=e.metadata.source_id,
+                start=e.metadata.start,
+                end=e.metadata.end
             )
             
-            save_file_fn(s.signal, fname)
+            save_file_fn(e.data, fname)
         
         dispose_fn()
 
-    def _load_dir(self, directory):
-        """Loads examples from directory
-        Returns:
-            list of Example namedtuples (data, label, name),
-            label denotes rhythm type, eg "(N"
-            name denotes file name
-        """
-        if not os.path.exists(directory):
+    def read(self, fpath):
+        try:
+            x = self._read_file(fpath)
+            return x
+        except Exception as e:
+            print("Skipped file {}, see error details:".format(fpath))
+            if hasattr(e, 'message'):
+                print(e.message)
+            else:
+                print(e)
             return []
-
-        fnames = [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
-        data = [None] * len(fnames)
-        labels = [None] * len(fnames)
-
-        for i, fname in enumerate(fnames):
-            try:
-                fpath = os.path.join(directory, fname)
-                x = self._read_file(fpath)
-                metadata = self.name_generator.get_metadata(fname)
-                if metadata:
-                    labels[i] = metadata.rhythm
-                    data[i] = x
-                else:
-                    print("Skipped file {}, can't parse name".format(fpath))
-            except Exception as e:
-                print("Skipped file {}, see error details:".format(fpath))
-                if hasattr(e, 'message'):
-                    print(e.message)
-                else:
-                    print(e)
-
-        filtered = [Example(x, lbl, f) for x, lbl, f in zip(data, labels, fnames) if not (x is None) and bool(lbl)]
-
-        return filtered
 
     def _read_file(self, fpath):
         """Read and return file data
