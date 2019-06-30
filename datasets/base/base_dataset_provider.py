@@ -32,8 +32,9 @@ class BaseDatasetProvider(object):
 
     @property
     def stats(self):
-        with open(os.path.join(self.examples_dir, "stats.json"), "w") as f:
-            return json.load(f)
+        with open(os.path.join(self.examples_dir, "stats.json"), "r") as f:
+            stats = json.load(f) 
+            return stats["mean"], stats["std"]
 
     def generate(self):
         if not self.examples_exists:

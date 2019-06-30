@@ -1,6 +1,7 @@
 import os
 import torch
 import torch.utils.data
+from torchvision import transforms
 import training.checkpoint as checkpoint
 import training.metrics.stats as stats
 from training.spec import TrainSpec, EvalSpec
@@ -13,6 +14,9 @@ from datasets.common.examples_provider import ExamplesProvider
 
 TRAIN = "train"
 EVAL = "eval"
+
+def squeeze(x):
+    return torch.squeeze(x, dim=0)
 
 class Experiment():
     def __init__(self, config, model_dir):
@@ -83,15 +87,23 @@ class Experiment():
 
         net = get_class(self._config.model.name)(self._config)
 
+        mean, std = self._dataset_provider.stats
+
+        transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[mean], std=[std]),
+            transforms.Lambda(squeeze)
+        ]) 
+
         train_examples = ExamplesProvider(
             folders=self._dataset_provider.train_set_path(fold_num),
             file_reader=self._file_provider,
-            label_map=self._label_map,
+            label_map=self._label_map
         )
 
         train_spec = TrainSpec(
             max_epochs=self._max_epochs,
-            dataset=Dataset(train_examples),
+            dataset=Dataset(train_examples, transform=transform),
             batch_size=32,
             optimizer_type="adam",
             optimizer_params={
@@ -109,7 +121,7 @@ class Experiment():
 
         eval_spec = EvalSpec(
             class_num=self._class_num,
-            dataset=Dataset(eval_examples),
+            dataset=Dataset(eval_examples, transform=transform),
             batch_size=100,
             every_n_epochs=self._eval_every_n_epochs,
             class_map={value: key for key, value in self._label_map.items()},
