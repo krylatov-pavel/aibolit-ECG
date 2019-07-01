@@ -24,7 +24,7 @@ def equalize(data, key_fn, distribution):
         class_items = [item for item in data if key_fn(item) == key]
 
         if distr:
-            take = int(base_count * distr)
+            take = min(int(base_count * distr), len(class_items))
         else:
             take = len(class_items)
 
