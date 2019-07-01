@@ -63,13 +63,13 @@ class CNN(nn.Module):
         self.avg_pool1 = nn.AvgPool1d(2, 2)
         shape.pool(2, 2)
 
-        self.conv8 = nn.Conv1d(filters_num, filters_num + filters_step, 5)
+        self.conv8 = nn.Conv1d(filters_num, filters_num + filters_step, 4)
         filters_num += filters_step
         self.conv8_bn = nn.BatchNorm1d(filters_num)
-        shape.conv(filters_num, kernel_size)
+        shape.conv(filters_num, 4)
 
-        self.avg_pool2 = nn.AvgPool1d(3, 3)
-        shape.pool(3, 3)
+        self.avg_pool2 = nn.AvgPool1d(4, 4)
+        shape.pool(4, 4)
 
         self.flatten_size = shape.size
 
