@@ -1,8 +1,11 @@
+import argparse
 import os
 import json
 import csv
 import numpy as np
 import pandas as pd
+import utils.helpers as helpers
+from utils.config import Config
 from datasets.utils.name_generator import NameGenerator
 from datasets.common.wavedata_provider import WavedataProvider
 
@@ -30,11 +33,13 @@ def database_data(path, fs, exclude=None):
 
     return pd.DataFrame(data)
 
-def dataset_data(dirs, fs):
+def dataset_data(root, folds, fs):
     data = []
 
     name = NameGenerator(".csv")
     wave = WavedataProvider()
+
+    dirs = (os.path.join(root, f) for f in folds)
     for dir in dirs:
         fnames = (os.path.join(dir, f) for f in os.listdir(dir))
         fnames = [f for f in fnames if os.path.isfile(f) and f.endswith(".csv")]
@@ -61,16 +66,34 @@ def relative_duration(db):
     return db
 
 def main():
-    db = database_data("C:\\Study\\aibolit-ECG\\data\\database\\aibolit", 1000, ["N", "n"])
-    db = relative_duration(db)
-    print(db)
-    
-    ds = dataset_data([
-        "C:\\Study\\aibolit-ECG\\data\\examples\\aibolit\\2fold_3s_(2N,R,AV)_250hz\\0",
-        "C:\\Study\\aibolit-ECG\\data\\examples\\aibolit\\2fold_3s_(2N,R,AV)_250hz\\1"
-    ], 250)
-    ds = relative_duration(ds)
-    print(ds)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config", "-c", help="Config name (wihout extension) or full path", type=str)
+
+    args = parser.parse_args()
+
+    if args.config:
+        config = Config(args.config)
+
+        dataset_provider = helpers.get_class(config.settings.dataset.dataset_provider)(config.settings.dataset.params)
+        
+        db = database_data(
+            "C:\\Study\\aibolit-ECG\\data\\database\\aibolit",
+            config.settings.dataset.params.get("fs"),
+            ["N", "n"]
+        )
+        db = relative_duration(db)
+        print(db)
+        
+        ds = dataset_data(
+            dataset_provider.examples_dir,
+            [str(i) for i in range(config.k)],
+            config.settings.dataset.params.get("resample_fs")
+        )
+        ds = relative_duration(ds)
+        print(ds)
+        
+    else:
+        print("configuration file name is required. use -h for help")
 
 if __name__=="__main__":
     main()
