@@ -30,7 +30,7 @@ class ConfusionMatrix(object):
         return tp / (total + EPSILON)
 
     def class_accuracy(self):
-        class_total = np.sum(self._cm, axis=1)
+        class_total = np.sum(self._cm, axis=0)
         class_tp = self._cm.diagonal()
         return class_tp / (class_total + EPSILON)
 
