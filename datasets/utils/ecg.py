@@ -67,11 +67,11 @@ class ECG(object):
 
         for i in range(slice_num):
             if i == slice_num - 1:
-                start_pos = start + np.maximum(i * slice_window - i * int(slice_window * overlap), 0) 
-                end_pos = start_pos + slice_window
-            else:
                 start_pos = self.signal_len - slice_window
                 end_pos = self.signal_len
+            else:
+                start_pos = start + np.maximum(i * slice_window - i * int(slice_window * overlap), 0) 
+                end_pos = start_pos + slice_window
 
             slices[i] = ExampleMetadata(
                 label=label,

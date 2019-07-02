@@ -20,7 +20,7 @@
         "params": {
             "source_name": "aibolit",
             "bypass_cache": false,
-            "example_duration": 3.33,
+            "example_duration": 3.3,
             "fs": 1000,
             "resample_fs": 250,            
             "class_settings": [{
