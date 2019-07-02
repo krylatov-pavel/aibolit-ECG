@@ -31,6 +31,7 @@ class Experiment():
         self._learning_rate = config.model.hparams.learning_rate
         self._class_num = len(config.dataset.params.label_map)
         self._label_map = config.dataset.params.label_map
+        self._normalize_input = config.dataset.params.normalize_input
 
         self._iteration = config.iteration
         self._max_epochs = config.max_epochs
@@ -87,13 +88,15 @@ class Experiment():
 
         net = get_class(self._config.model.name)(self._config)
 
-        mean, std = self._dataset_provider.stats
-
-        transform = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[mean], std=[std]),
-            transforms.Lambda(squeeze)
-        ]) 
+        if self._normalize_input:
+            mean, std = self._dataset_provider.stats
+            transform = transforms.Compose([
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[mean], std=[std]),
+                transforms.Lambda(squeeze)
+            ])
+        else:
+            transform = None 
 
         train_examples = ExamplesProvider(
             folders=self._dataset_provider.train_set_path(fold_num),
