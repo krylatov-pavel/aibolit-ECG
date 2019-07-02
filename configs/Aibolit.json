@@ -1,7 +1,7 @@
 {
     "model": {
         "name": "models.aibolit.cnn_generic.CNN",
-        "experiment": "aibolit_N_R_AV_generic_2fold",
+        "experiment": "aibolit_6class_generic_2fold",
         "hparams": {
             "learning_rate": 0.00033,
             "dropout": 0.55,
@@ -27,31 +27,50 @@
                 "name": "N",
                 "rhythm": "N",
                 "overlap": 0,
-                "equalize_distribution": 2
+                "equalize_distribution": 2.5
             
             }, {
                 "name": "R",
                 "rhythm": "R",
                 "overlap": 0.4,
                 "take_last": true,
-                "equalize_distribution": 1
+                "equalize_distribution": false
             }, {
                 "name": "AV",
                 "rhythm": "AV",
-                "overlap": 0.4,
+                "overlap": 0,
+                "take_last": false,
+                "equalize_distribution": 1
+            }, {
+                "name": "L",
+                "rhythm": "L",
+                "overlap": 0,
+                "take_last": false,
+                "equalize_distribution": 1
+            }, {
+                "name": "AFIB",
+                "rhythm": "AFIB",
+                "overlap": 0,
+                "take_last": true,
+                "equalize_distribution": 1
+            }, {
+                "name": "ISH",
+                "rhythm": "ISH",
+                "overlap": 0.6,
                 "take_last": true,
                 "equalize_distribution": false
             }],
             "label_map": {
                 "N": 0,
                 "R": 1,
-                "AV": 2
+                "L": 2,
+                "AV": 3,
+                "AFIB": 4,
+                "ISH": 5
             },
-            "rhythm_map": {},
-            "normalize": true,
             "split_ratio": [0.8, 0.2],
-            "test_set_size": 0.05,
-            "include_augmented": false
+            "test_set_size": 0.1,
+            "normalize_input": false
         }
     },
     "max_epochs": 220,
@@ -59,5 +78,5 @@
     "eval_every_n_epochs": 3,
     "wait_improvement_n_evals": 5,
     "params_space": "configs.hyperopt_spaces.aibolit_(N,R).Space",
-    "iteration": "7"
+    "iteration": "default"
 }
