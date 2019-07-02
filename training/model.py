@@ -75,7 +75,7 @@ class Model(object):
             tensorboard_writer.add_graph(self._net, input_to_model=inputs)
 
             #evaluate initial accuracy
-            metrics = self.evaluate(eval_spec)
+            metrics, _ = self.evaluate(eval_spec)
             for metric, scalar in metrics.items():
                 file_writer.add_scalar(metric, scalar, 0)
                 tensorboard_writer.add_scalar(metric, scalar, global_step=0)
@@ -86,11 +86,11 @@ class Model(object):
                 self._net.train()
                 loss_acm.next_epoch()
                 for batch in train_loader:
-                    inputs, labels = batch[0].to(self._device), batch[1].to(self._device)
+                    inputs, y = batch[0].to(self._device), batch[1].to(self._device)
 
                     self._optimizer.zero_grad()
                     predictions = self._net(inputs)
-                    loss = loss_fn(predictions, labels)
+                    loss = loss_fn(predictions, y)
                     loss.backward()
                     self._optimizer.step()
 
@@ -99,7 +99,7 @@ class Model(object):
                 tensorboard_writer.add_scalar("traing_loss", loss_acm.avg, global_step=self._curr_epoch)
                 
                 if self._curr_epoch % eval_spec.every_n_epochs == 0 or self._curr_epoch == train_spec.max_epochs:
-                    metrics = self.evaluate(eval_spec)
+                    metrics, _ = self.evaluate(eval_spec)
                     for metric, scalar in metrics.items():
                         file_writer.add_scalar(metric, scalar, self._curr_epoch)
                         tensorboard_writer.add_scalar(metric, scalar, global_step=self._curr_epoch)
@@ -132,17 +132,17 @@ class Model(object):
 
         eval_loader = data.DataLoader(eval_spec.dataset, batch_size=eval_spec.batch_size, shuffle=True, num_workers=2)
         for batch in eval_loader:
-            inputs, labels = batch[0].to(self._device), batch[1]
+            inputs, y = batch[0].to(self._device), batch[1]
             with torch.no_grad():
                 predictions = self._net(inputs)
                 _, predictions = torch.max(predictions, 1)
-                cm.append(predictions.cpu().numpy(), labels.numpy())
+                cm.append(predictions.cpu().numpy(), y.numpy())
 
         metrics = { "accuracy": cm.accuracy() }
         for i, acc in enumerate(cm.class_accuracy()):
             metrics["accuracy_{}".format(eval_spec.class_map.get(i))] = acc
         
-        return metrics
+        return metrics, cm
 
     def _save_checkpoint(self, optimizer_type, optimizer_params, best_metric_value, steps_since_last_improvemet, wait_improvement_n_evals):
         params = {
