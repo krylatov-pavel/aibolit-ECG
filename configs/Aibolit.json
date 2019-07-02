@@ -20,7 +20,7 @@
         "params": {
             "source_name": "aibolit",
             "bypass_cache": false,
-            "example_duration": 3,
+            "example_duration": 3.33,
             "fs": 1000,
             "resample_fs": 250,            
             "class_settings": [{
@@ -28,45 +28,33 @@
                 "rhythm": "N",
                 "overlap": 0,
                 "equalize_distribution": 2.5
-            
             }, {
                 "name": "R",
                 "rhythm": "R",
-                "overlap": 0.4,
-                "take_last": true,
+                "overlap": 0.594,
                 "equalize_distribution": false
             }, {
                 "name": "AV",
                 "rhythm": "AV",
                 "overlap": 0,
-                "take_last": false,
                 "equalize_distribution": 1
             }, {
                 "name": "L",
                 "rhythm": "L",
                 "overlap": 0,
-                "take_last": false,
                 "equalize_distribution": 1
             }, {
                 "name": "AFIB",
                 "rhythm": "AFIB",
                 "overlap": 0,
-                "take_last": true,
                 "equalize_distribution": 1
-            }, {
-                "name": "ISH",
-                "rhythm": "ISH",
-                "overlap": 0.6,
-                "take_last": true,
-                "equalize_distribution": false
             }],
             "label_map": {
                 "N": 0,
                 "R": 1,
                 "L": 2,
                 "AV": 3,
-                "AFIB": 4,
-                "ISH": 5
+                "AFIB": 4
             },
             "split_ratio": [0.8, 0.2],
             "test_set_size": 0.1,

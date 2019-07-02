@@ -32,8 +32,7 @@ class ECG(object):
                     label=label,
                     start=start,
                     end=end,
-                    overlap=match.overlap,
-                    take_last=match.get("take_last")
+                    overlap=match.overlap
                 ))
 
         return metadata
@@ -54,7 +53,7 @@ class ECG(object):
 
         return examples
     
-    def __cut_examples_metadata(self, example_duration, label, start, end, overlap=0, take_last=False):
+    def __cut_examples_metadata(self, example_duration, label, start, end, overlap=0):
         """ Cust single heart rhythm sequence into fixed-length slices
         Args:
             start: sequence start position, inclusive
@@ -67,8 +66,12 @@ class ECG(object):
         slices = [None] * slice_num
 
         for i in range(slice_num):
-            start_pos = start + np.maximum(i * slice_window - i * int(slice_window * overlap), 0) 
-            end_pos = start_pos + slice_window
+            if i == slice_num - 1:
+                start_pos = start + np.maximum(i * slice_window - i * int(slice_window * overlap), 0) 
+                end_pos = start_pos + slice_window
+            else:
+                start_pos = self.signal_len - slice_window
+                end_pos = self.signal_len
 
             slices[i] = ExampleMetadata(
                 label=label,
@@ -76,17 +79,7 @@ class ECG(object):
                 start=start_pos,
                 end=end_pos
             )
-            
-        if take_last:
-            start_pos = self.signal_len - slice_window
-            end_pos = start_pos + slice_window
-            slices.append(ExampleMetadata(
-                label=label,
-                source_id=self.name,
-                start=start_pos,
-                end=end_pos
-            ))
-        
+
         return slices
         
     def __match(self, label, rhythm_filter):
