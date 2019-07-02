@@ -52,7 +52,9 @@ def main():
             examples = ExamplesProvider(
                 folders=dataset_provider.eval_set_path(),
                 file_reader=file_reader,
-                label_map=config.settings.dataset.params.label_map
+                label_map=config.settings.dataset.params.label_map,
+                equalize_labels=True
+
             )
             eval_spec.dataset = Dataset(examples, transform=transform)
             model = Model.restore(net, config.model_dir, checkpoints)
@@ -63,7 +65,8 @@ def main():
                 examples = ExamplesProvider(
                     folders=dataset_provider.eval_set_path(eval_fold_number=i),
                     file_reader=file_reader,
-                    label_map=config.settings.dataset.params.label_map
+                    label_map=config.settings.dataset.params.label_map,
+                    equalize_labels=True
                 )
                 eval_spec.dataset = Dataset(examples, transform=transform)
                 model = Model.restore(net, os.path.join(config.model_dir, "fold_{}".format(i)), checkpoints[i])
