@@ -65,14 +65,14 @@ class CNN(nn.Module):
         self.conv_layers.append(nn.MaxPool1d(2, 2)) #47
         shape.pool(2, 2)
 
-        self.conv_layers.append(nn.Conv1d(filters_num, filters_num + filters_step, 3)) #93
+        self.conv_layers.append(nn.Conv1d(filters_num, filters_num + filters_step, 4)) #44
         filters_num += filters_step
         self.conv_layers.append(nn.BatchNorm1d(filters_num))
         self.conv_layers.append(nn.ReLU())
-        shape.conv(filters_num, 3)
+        shape.conv(filters_num, 4)
 
-        self.conv_layers.append(nn.AvgPool1d(7, 7))#13
-        shape.pool(7, 7)
+        self.conv_layers.append(nn.AvgPool1d(4, 4))#11
+        shape.pool(4, 4)
 
         self.flatten_size = shape.size
 
