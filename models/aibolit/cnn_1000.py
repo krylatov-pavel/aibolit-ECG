@@ -35,24 +35,25 @@ class CNN(nn.Module):
         shape.pool(2, 2, (1, 0))
 
         self.conv_layers.append(nn.Conv1d(filters_num, filters_num + filters_step, 7, stride=2)) #59
-        filters_num =+ filters_step
+        filters_num = filters_num + filters_step
         self.conv_layers.append(nn.BatchNorm1d(filters_num))
         self.conv_layers.append(nn.ReLU())
         shape.conv(filters_num, 7, 2)
 
-        self.conv_layers.append(nn.Conv1d(filters_num, filters_num + filters_step, 7)) #52
+        self.conv_layers.append(nn.Conv1d(filters_num, filters_num, 7)) #53
         self.conv_layers.append(nn.BatchNorm1d(filters_num))
         self.conv_layers.append(nn.ReLU())
         shape.conv(filters_num, 7)
 
-        self.conv_layers.append(nn.MaxPool1d(2, 2)) #26
-        shape.pool(2, 2)
+        self.conv_layers.append(nn.ConstantPad1d((1, 0), 0))
+        self.conv_layers.append(nn.MaxPool1d(2, 2)) #27
+        shape.pool(2, 2, (1, 0))
         
-        self.conv_layers.append(nn.Conv1d(filters_num, filters_num + filters_step, 3)) #24
-        filters_num =+ filters_step
+        self.conv_layers.append(nn.Conv1d(filters_num, filters_num + filters_step, 4)) #24
+        filters_num += filters_step
         self.conv_layers.append(nn.BatchNorm1d(filters_num))
         self.conv_layers.append(nn.ReLU())
-        shape.conv(filters_num, 5)
+        shape.conv(filters_num, 4)
 
         self.conv_layers.append(nn.AvgPool1d(3, 3))#8
         shape.pool(3, 3)
