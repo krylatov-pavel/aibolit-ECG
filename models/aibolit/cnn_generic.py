@@ -15,6 +15,7 @@ class CNN(nn.Module):
         conv_layer_num = config.model.hparams["conv_layer_num"]
         dropout = config.model.hparams["dropout"]
         fc_units = config.model.hparams["fc_units"]
+        fc_layers = config.model.hparams["fc_layers"]
 
         shape = DataShape1d(1, input_size)
 
@@ -54,6 +55,13 @@ class CNN(nn.Module):
         self.fc_layers.append(nn.ReLU())
         self.fc_layers.append(nn.Dropout(dropout))
         shape.fc(fc_units)
+
+        for i in range(max(fc_layers - 2, 0)):
+            self.fc_layers.append(nn.Linear(fc_units, fc_units))
+            self.fc_layers.append(nn.BatchNorm1d(fc_units))
+            self.fc_layers.append(nn.ReLU())
+            self.fc_layers.append(nn.Dropout(dropout))
+            shape.fc(fc_units)
 
         self.fc_layers.append(nn.Linear(shape.size, class_num))
         shape.fc(class_num) 

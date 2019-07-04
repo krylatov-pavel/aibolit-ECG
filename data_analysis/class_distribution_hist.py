@@ -63,11 +63,16 @@ def dataset_data(root, folds, fs):
 def relative_duration(db):
     db = db.groupby("label").duration.sum().to_frame()
     db["percentage"] = db.duration / db.duration.sum() * 100
+    db = db.sort_values("duration")
     return db
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", "-c", help="Config name (wihout extension) or full path", type=str)
+    parser.add_argument("--db", "-b", dest="db", action="store_true")
+    parser.add_argument("--ds", "-s", dest="ds", action="store_true")
+    parser.set_defaults(db=False)
+    parser.set_defaults(ds=False)
 
     args = parser.parse_args()
 
@@ -76,21 +81,23 @@ def main():
 
         dataset_provider = helpers.get_class(config.settings.dataset.dataset_provider)(config.settings.dataset.params)
         
-        db = database_data(
-            "C:\\Study\\aibolit-ECG\\data\\database\\aibolit",
-            config.settings.dataset.params.get("fs"),
-            ["N", "n"]
-        )
-        db = relative_duration(db)
-        print(db)
+        if args.db:
+            db = database_data(
+                "D:\\Study\\Aibolit-ECG\\data\\database\\aibolit",
+                config.settings.dataset.params.get("fs"),
+                ["N", "n", "ISH"]
+            )
+            db = relative_duration(db)
+            print(db)
         
-        ds = dataset_data(
-            dataset_provider.examples_dir,
-            [str(i) for i in range(config.k)],
-            config.settings.dataset.params.get("resample_fs")
-        )
-        ds = relative_duration(ds)
-        print(ds)
+        if args.ds:
+            ds = dataset_data(
+                dataset_provider.examples_dir,
+                [str(i) for i in range(config.k)],
+                config.settings.dataset.params.get("resample_fs")
+            )
+            ds = relative_duration(ds)
+            print(ds)
         
     else:
         print("configuration file name is required. use -h for help")
