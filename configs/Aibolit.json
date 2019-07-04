@@ -1,7 +1,7 @@
 {
     "model": {
         "name": "models.aibolit.cnn_generic.CNN",
-        "experiment": "aibolit_6class_generic_2fold",
+        "experiment": "aibolit_10class_generic_2fold",
         "hparams": {
             "learning_rate": 0.00033,
             "dropout": 0.55,
@@ -11,7 +11,8 @@
             "filters_step": 32,
             "conv_kernel_size": 7,
             "conv_layer_num": 7,
-            "fc_units": 40
+            "fc_units": 40,
+            "fc_layers": 2
         }
     },
     "dataset" : {
@@ -24,37 +25,67 @@
             "fs": 1000,
             "resample_fs": 250,            
             "class_settings": [{
-                "name": "N",
-                "rhythm": "N",
-                "overlap": 0,
-                "equalize_distribution": 2.5
-            }, {
                 "name": "R",
                 "rhythm": "R",
                 "overlap": 0.594,
                 "equalize_distribution": false
             }, {
-                "name": "AV",
-                "rhythm": "AV",
-                "overlap": 0,
-                "equalize_distribution": 1
+                "name": "AR",
+                "rhythm": "AR",
+                "overlap": 0.594,
+                "equalize_distribution": false
             }, {
-                "name": "L",
-                "rhythm": "L",
-                "overlap": 0,
-                "equalize_distribution": 1
+                "name": "PQ",
+                "rhythm": "PQ",
+                "overlap": 0.493,
+                "equalize_distribution": false
             }, {
                 "name": "AFIB",
                 "rhythm": "AFIB",
+                "overlap": 0.493,
+                "equalize_distribution": false
+            }, {
+                "name": "L",
+                "rhythm": "L",
+                "overlap": 0.324,
+                "equalize_distribution": false
+            }, {
+                "name": "AV",
+                "rhythm": "AV",
+                "overlap": 0.324,
+                "equalize_distribution": 1
+            },    {
+                "name": "EVR",
+                "rhythm": "EVR",
+                "overlap": 0.324,
+                "equalize_distribution": 1
+            }, {
+                "name": "ECT",
+                "rhythm": "ECT",
                 "overlap": 0,
                 "equalize_distribution": 1
+            }, {
+                "name": "IVH",
+                "rhythm": "IVH",
+                "overlap": 0,
+                "equalize_distribution": 1
+            }, {
+                "name": "N",
+                "rhythm": "N",
+                "overlap": 0,
+                "equalize_distribution": 2.5
             }],
             "label_map": {
                 "N": 0,
                 "R": 1,
                 "L": 2,
                 "AV": 3,
-                "AFIB": 4
+                "AFIB": 4,
+                "AR": 5,
+                "PQ": 6,
+                "EVR": 7,
+                "ECT": 8,
+                "IVH": 9
             },
             "split_ratio": [0.8, 0.2],
             "test_set_size": 0.1,
@@ -65,6 +96,6 @@
     "keep_n_checkpoints": 5,
     "eval_every_n_epochs": 3,
     "wait_improvement_n_evals": 5,
-    "params_space": "configs.hyperopt_spaces.aibolit_(N,R).Space",
+    "params_space": "configs.hyperopt_spaces.aibolit_generic.Space",
     "iteration": "default"
 }
