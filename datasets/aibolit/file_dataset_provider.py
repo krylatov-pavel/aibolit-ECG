@@ -9,6 +9,8 @@ class FileDatasetProvider(BaseDatasetProvider):
     def __init__(self, params):
         super(FileDatasetProvider, self).__init__(params, WavedataProvider())
 
+        self._rhythm_filter = { c.rhythm: c for _, c in self._class_settings.items() }
+
         self._fs = params.fs
         self._resample_fs = params.get("resample_fs")
         self._example_duration = params.example_duration
@@ -64,18 +66,21 @@ class FileDatasetProvider(BaseDatasetProvider):
         dirs = (d for d in dirs if os.path.isdir(d))
 
         for d in dirs:
-            label = os.path.basename(d)
+            rhythm = os.path.basename(d)
 
-            files = (os.path.join(d, f) for f in os.listdir(d))
-            files = (f for f in files if os.path.isfile(f) and os.path.splitext(f)[1].lower() == ".json")
-            for f in files:
-                with open(f, "r") as json_file:
-                    signal = json.load(json_file)
-                    ecg = ECG(
-                        name=os.path.splitext(os.path.basename(f))[0],
-                        labels=[label],
-                        timecodes=[0],
-                        fs=self._fs,
-                        signal_len = len(signal)
-                    )
-                    yield ecg
+            if rhythm in self._rhythm_filter:
+                label = self._rhythm_filter[rhythm].name
+
+                files = (os.path.join(d, f) for f in os.listdir(d))
+                files = (f for f in files if os.path.isfile(f) and os.path.splitext(f)[1].lower() == ".json")
+                for f in files:
+                    with open(f, "r") as json_file:
+                        signal = json.load(json_file)
+                        ecg = ECG(
+                            name=os.path.splitext(os.path.basename(f))[0],
+                            labels=[label],
+                            timecodes=[0],
+                            fs=self._fs,
+                            signal_len = len(signal)
+                        )
+                        yield ecg
