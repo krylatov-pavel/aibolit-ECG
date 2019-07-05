@@ -42,10 +42,6 @@ class Logger(object):
         steps = logs.groupby("step")
 
         metrics = list(set(logs.columns) - set(["step", "fold_num"]))
-        colors = ["b-", "y-", "-g", "-c", "-m", "-r"]
-        colors = colors * math.ceil(len(metrics) / len(colors))
-        metrics = [(m, c) for m, c in zip(metrics, colors)]
-
         plots = []
         legends = []
 
@@ -59,7 +55,7 @@ class Logger(object):
         x_pos = sorted(logs.step.unique())
         plt.xticks(x_pos, x_pos)
         
-        for metric, color in metrics:
+        for metric in metrics:
             m_mean = steps[metric].agg(np.mean)
             x, y = unzip_list(m_mean.iteritems())
             alpha = 0.5
@@ -69,10 +65,11 @@ class Logger(object):
                 step = x[idx_max]
                 max_accuracy = y[idx_max]
                 alpha = 1
+                color = "black"
                 plt.text(min(steps)[0], 0.05, "max accuracy {:.3f} on step {}".format(max_accuracy, step))
 
             label = metric
-            plot, = plt.plot(x, y, color, alpha=alpha, label=label)
+            plot, = plt.plot(x, y, alpha=alpha, label=label)
             plots.append(plot)
             legends.append(label)
 
