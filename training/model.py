@@ -1,6 +1,7 @@
 import os
 import re
 import torch
+import adabound as adabound
 from torch.utils import data
 import torch.optim as optim
 import torch.nn as nn
@@ -14,6 +15,8 @@ from training.early_stopper import EarlyStopper
 def create_optimizer(optimizer_type, net_parameters, optimizer_params):
     if optimizer_type == "adam":
         return optim.Adam(net_parameters, **optimizer_params)
+    elif optimizer_type == "adabound":
+        return adabound.AdaBound(net_parameters, **optimizer_params)
     else:
         raise ValueError("Unknown optimizer type")
 
@@ -87,14 +90,14 @@ class Model(object):
                 loss_acm.next_epoch()
                 for batch in train_loader:
                     inputs, y = batch[0].to(self._device), batch[1].to(self._device)
+                    if len(y) > 1:
+                        self._optimizer.zero_grad()
+                        predictions = self._net(inputs)
+                        loss = loss_fn(predictions, y)
+                        loss.backward()
+                        self._optimizer.step()
 
-                    self._optimizer.zero_grad()
-                    predictions = self._net(inputs)
-                    loss = loss_fn(predictions, y)
-                    loss.backward()
-                    self._optimizer.step()
-
-                    loss_acm.next_iteration(loss.item())
+                        loss_acm.next_iteration(loss.item())
 
                 tensorboard_writer.add_scalar("traing_loss", loss_acm.avg, global_step=self._curr_epoch)
                 
