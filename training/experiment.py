@@ -8,7 +8,7 @@ from training.spec import TrainSpec, EvalSpec
 from training.model import Model
 from utils.dirs import create_dirs
 from utils.helpers import get_class
-from models.MIT.ensemble import Ensemble
+from models.common.ensemble import Ensemble
 from datasets.common.dataset import Dataset
 from datasets.common.examples_provider import ExamplesProvider
 
@@ -28,7 +28,9 @@ class Experiment():
         self._name = config.model.experiment
         self._k = len(config.dataset.params.split_ratio)
 
-        self._learning_rate = config.model.hparams.learning_rate
+        self._optimizer = config.model.hparams.optimizer.type
+        self._optimizer_params = config.model.hparams.optimizer.params
+
         self._class_num = len(config.dataset.params.label_map)
         self._label_map = config.dataset.params.label_map
         self._normalize_input = config.dataset.params.normalize_input
@@ -52,7 +54,7 @@ class Experiment():
 
     def export(self, checkpoint=None):
         if self._k == 2:
-            net = self._load_net(self._model_dir, checkpoint_index=checkpoint[0])
+            net = self._load_net(self._model_dir, checkpoint_index=checkpoint)
         elif self._k > 2:
             models = {}
             for i in range(self._k):
@@ -108,10 +110,8 @@ class Experiment():
             max_epochs=self._max_epochs,
             dataset=Dataset(train_examples, transform=transform),
             batch_size=32,
-            optimizer_type="adam",
-            optimizer_params={
-                "lr": self._learning_rate
-            },
+            optimizer_type= self._optimizer,
+            optimizer_params=self._optimizer_params,
             wait_improvement_n_evals=self._wait_improvement_n_evals
         )
 

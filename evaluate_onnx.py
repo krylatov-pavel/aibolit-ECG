@@ -3,10 +3,17 @@ import os
 import torch.utils.data
 import onnxruntime as rt
 import numpy as np
-from datasets.base.dataset import Dataset
+from datasets.common.dataset import Dataset
+from datasets.common.examples_provider import ExamplesProvider
 from training.metrics.confusion_matrix import ConfusionMatrix
 from utils.helpers import get_class
 from utils.config import Config 
+from datasets.MIT.common.wavedata_provider import WavedataProvider
+from torch.utils import data
+from torchvision import transforms
+
+def squeeze(x):
+    return torch.squeeze(x, dim=0)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -16,9 +23,28 @@ def main():
     if args.config:
         config = Config(args.config)
 
-        batch_size = 32
-        examples_provider = get_class(config.settings.dataset.provider)(config.settings.dataset.params)
-        dataset = Dataset(examples_provider, list(range(len(config.settings.dataset.params.split_ratio))))
+        dataset_provider = get_class(config.settings.dataset.dataset_provider)(config.settings.dataset.params)
+        file_reader = get_class(config.settings.dataset.file_provider)()
+        batch_size = config.settings.model.hparams.eval_batch_size
+        
+        examples = ExamplesProvider(
+            folders=dataset_provider.test_set_path(),
+            file_reader=file_reader,
+            label_map=config.settings.dataset.params.label_map,
+            equalize_labels=True
+        )
+
+        if config.settings.dataset.params.normalize_input:
+            mean, std = dataset_provider.stats
+            transform = transforms.Compose([
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[mean], std=[std]),
+                transforms.Lambda(squeeze)
+            ])
+        else:
+            transform = None 
+
+        dataset = Dataset(examples, transform=transform)
         data_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False)
 
         cm = ConfusionMatrix([], [], len(config.settings.dataset.params.label_map))
@@ -40,6 +66,7 @@ def main():
         class_accuracy = cm.class_accuracy()
         for i, acc in enumerate(class_accuracy):
             print("accuracy\t{}\t{:.3f}".format(class_map[i], acc))
+        cm.plot(os.path.join(config.model_dir, "TEST_confusion_matrix.png"), class_map=class_map)
     else:
         print("configuration file name is required. use -h for help")
 
