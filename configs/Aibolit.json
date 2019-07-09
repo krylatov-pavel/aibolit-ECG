@@ -1,19 +1,20 @@
 {
     "model": {
         "name": "models.aibolit.cnn_5layer.CNN",
-        "experiment": "aibolit_6class_5layer_2fold_more_N",
+        "experiment": "aibolit_7class_5layer_2fold_pvc",
         "hparams": {
             "optimizer": {
                 "type": "adam",
                 "params": {
-                    "lr": 0.007385
+                    "lr": 0.005393,
+                    "weight_decay": 0.00016
                 }
             },
-            "dropout": 0.311743,
+            "dropout": 0.3973,
             "train_batch_size": 32,
             "eval_batch_size": 100,
-            "filters_num": 66,
-            "fc_units": 40,
+            "filters_num": 60,
+            "fc_units": 45,
             "fc_layers": 3,
             "activation_fn": "torch.nn.ReLU"
         }
@@ -29,6 +30,12 @@
             "resample_fs": 250,
             "class_settings": [
                 {
+                    "name": "PVC",
+                    "rhythm": "pvc",
+                    "overlap": 0.662,
+                    "equalize_distribution": false
+                },
+                {
                     "name": "R",
                     "rhythm": "r",
                     "overlap": 0.662,
@@ -37,19 +44,19 @@
                 {
                     "name": "AFIB",
                     "rhythm": "afib",
-                    "overlap": 0.493,
+                    "overlap": 0.594,
                     "equalize_distribution": false
                 },
                 {
                     "name": "L",
                     "rhythm": "l",
                     "overlap": 0.594,
-                    "equalize_distribution": false
+                    "equalize_distribution": 1
                 },
                 {
                     "name": "AV",
                     "rhythm": "av",
-                    "overlap": 0.594,
+                    "overlap": 0.493,
                     "equalize_distribution": 1
                 },
                 {
@@ -62,7 +69,7 @@
                     "name": "N",
                     "rhythm": "n",
                     "overlap": 0,
-                    "equalize_distribution": 1.9
+                    "equalize_distribution": 1.5
                 }
             ],
             "label_map": {
@@ -71,20 +78,32 @@
                 "L": 2,
                 "AV": 3,
                 "AR": 4,
-                "AFIB": 5
+                "AFIB": 5,
+                "PVC": 6
             },
             "split_ratio": [
                 0.8,
                 0.2
             ],
-            "test_set_size": 0.1,
+            "test_set_size": 0,
             "normalize_input": false
         }
     },
     "max_epochs": 220,
     "keep_n_checkpoints": 4,
-    "eval_every_n_epochs": 3,
+    "early_stopper_params": {
+        "patience": 7
+    },
+    "eval_scheduler_params": {
+        "interval": 3,
+        "decrease_step": 1,
+        "decrease_timeout": 12
+    },
+    "lr_scheduler_params": {
+        "factor": 0.2,
+        "patience": 4
+    },
     "wait_improvement_n_evals": 4,
     "params_space": "configs.hyperopt_spaces.aibolit_5layer.Space",
-    "iteration": "1"
+    "iteration": "default"
 }

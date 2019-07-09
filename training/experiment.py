@@ -38,8 +38,9 @@ class Experiment():
         self._iteration = config.iteration
         self._max_epochs = config.max_epochs
         self._keep_n_checkpoints = config.keep_n_checkpoints
-        self._eval_every_n_epochs = config.eval_every_n_epochs
-        self._wait_improvement_n_evals = config.wait_improvement_n_evals
+        self._early_stopper_params = config.early_stopper_params
+        self._eval_scheduler_params = config.eval_scheduler_params
+        self._lr_scheduler_params = config.lr_scheduler_params
 
     def run(self):
         #regular experiment
@@ -112,7 +113,8 @@ class Experiment():
             batch_size=32,
             optimizer_type= self._optimizer,
             optimizer_params=self._optimizer_params,
-            wait_improvement_n_evals=self._wait_improvement_n_evals
+            lr_scheduler_params=self._lr_scheduler_params,
+            early_stopper_params=self._early_stopper_params
         )
 
         eval_examples = ExamplesProvider(
@@ -126,7 +128,7 @@ class Experiment():
             class_num=self._class_num,
             dataset=Dataset(eval_examples, transform=transform),
             batch_size=100,
-            every_n_epochs=self._eval_every_n_epochs,
+            eval_scheduler_params=self._eval_scheduler_params,
             class_map={value: key for key, value in self._label_map.items()},
             keep_n_checkpoints=self._keep_n_checkpoints
         )
