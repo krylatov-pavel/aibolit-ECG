@@ -168,7 +168,7 @@ class Model(object):
             tensorboard_writer.close()
             
             if self._early_stopper.stop:
-                print("accuracy didn't improve for last {} eval probs, interrupted on epoch {}".format(train_spec.wait_improvement_n_evals, self._curr_epoch))
+                print("accuracy didn't improve for last {} eval probs, interrupted on epoch {}".format(train_spec.early_stopper_params.patience, self._curr_epoch))
             elif self._curr_epoch >= train_spec.max_epochs:
                 print("reached max_epoch steps: {}".format(train_spec.max_epochs))
         else:
