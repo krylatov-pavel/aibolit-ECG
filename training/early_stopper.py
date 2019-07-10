@@ -12,7 +12,7 @@ class EarlyStopper(object):
     
     @property
     def stop(self):
-        return self._curr_epoch - self._best_epoch >= self._patience
+        return self._curr_epoch - self._best_epoch > self._patience
 
     @property
     def best_epoch(self):

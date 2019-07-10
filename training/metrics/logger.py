@@ -52,9 +52,7 @@ class Logger(object):
         plt.ylim(0.0, 1.0)
         y_pos = np.arange(11) * 0.1
         plt.yticks(y_pos, [str(int(percent * 100)) for percent in y_pos])
-        x_pos = sorted(logs.step.unique())
-        plt.xticks(x_pos, x_pos)
-        
+
         for metric in metrics:
             m_mean = steps[metric].agg(np.mean)
             x, y = unzip_list(m_mean.iteritems())
@@ -65,7 +63,6 @@ class Logger(object):
                 step = x[idx_max]
                 max_accuracy = y[idx_max]
                 alpha = 1
-                color = "black"
                 plt.text(min(steps)[0], 0.05, "max accuracy {:.3f} on step {}".format(max_accuracy, step))
 
             label = metric
