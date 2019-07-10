@@ -125,7 +125,7 @@ class Model(object):
                 file_writer.add_scalar(metric, scalar, 0)
                 tensorboard_writer.add_scalar(metric, scalar, global_step=0)
 
-            train_loader = data.DataLoader(train_spec.dataset, batch_size=train_spec.batch_size, shuffle=True)
+            train_loader = data.DataLoader(train_spec.dataset, batch_size=train_spec.batch_size, shuffle=True, num_workers=0)
 
             while self._curr_epoch < train_spec.max_epochs and not self._early_stopper.stop:
                 self._curr_epoch += 1
@@ -180,7 +180,7 @@ class Model(object):
 
         cm = ConfusionMatrix([], [], eval_spec.class_num)
 
-        eval_loader = data.DataLoader(eval_spec.dataset, batch_size=eval_spec.batch_size, shuffle=True, num_workers=2)
+        eval_loader = data.DataLoader(eval_spec.dataset, batch_size=eval_spec.batch_size, shuffle=True, num_workers=0)
         for batch in eval_loader:
             inputs, y = batch[0].to(self._device), batch[1]
             with torch.no_grad():

@@ -1,6 +1,7 @@
 import os
 import torch
 import torch.utils.data
+import time
 from torchvision import transforms
 import training.checkpoint as checkpoint
 import training.metrics.stats as stats
@@ -140,8 +141,11 @@ class Experiment():
             model = Model.restore(net, model_dir, last_checkpoint, device=device)
         else:
             model = Model(net, model_dir, device=device)
-
+        
+        start = time.perf_counter()
         model.train_and_evaluate(train_spec, eval_spec)
+        end = time.perf_counter()
+        print("execution time: {}s".format(end - start))
 
     def _load_net(self, model_dir, checkpoint_index=None):
         net = get_class(self._config.model.name)(self._config)
