@@ -22,11 +22,11 @@ class EvalScheduler(object):
     def step(self, epoch=None):
         self._curr_epoch = epoch or (self._curr_epoch + 1)
         
-        if self._decrease_timeout and self._curr_epoch >= self._decrease_timeout:
-            self._interval = max(self._initial_interval - self._decrease_step * (self._curr_epoch // self._decrease_timeout), 1)
-        
         if self._curr_epoch - self._last_eval_epoch == self._interval:
             self._last_eval_epoch = self._curr_epoch
+
+        if self._decrease_timeout and self._curr_epoch >= self._decrease_timeout:
+            self._interval = max(self._initial_interval - self._decrease_step * (self._curr_epoch // self._decrease_timeout), 1)
 
     def state_dict(self):
         return {key: value for key, value in self.__dict__.items()}

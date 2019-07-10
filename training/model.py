@@ -12,6 +12,7 @@ from training.metrics.logger import Logger
 import training.checkpoint as checkpoint
 from training.early_stopper import EarlyStopper
 from training.eval_scheduler import EvalScheduler
+from training.lr_scheduler import CustomReduceLROnPlateau
 
 def create_optimizer(optimizer_type, net_parameters, optimizer_params):
     if optimizer_type == "adam":
@@ -22,7 +23,7 @@ def create_optimizer(optimizer_type, net_parameters, optimizer_params):
         raise ValueError("Unknown optimizer type")
 
 def create_lr_scheduler(optimizer, lr_scheduler_params):
-    return optim.lr_scheduler.ReduceLROnPlateau(
+    return CustomReduceLROnPlateau(
         optimizer=optimizer,
         mode="max",
         verbose=True,
@@ -149,7 +150,7 @@ class Model(object):
                     for metric, scalar in metrics.items():
                         file_writer.add_scalar(metric, scalar, self._curr_epoch)
                         tensorboard_writer.add_scalar(metric, scalar, global_step=self._curr_epoch)
-
+                    
                     self._lr_scheduler.step(metrics.get("accuracy"), epoch=self._curr_epoch)
                     self._early_stopper.step(metrics.get("accuracy"), epoch=self._curr_epoch)
 
