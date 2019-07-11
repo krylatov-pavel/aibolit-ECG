@@ -9,7 +9,10 @@ class DatabaseProvider(object):
         self.db_name = db_name
         self._SIGNAL_FNAME = "signal.pkl"
         self._ANNT_FNAME = "annotation.pkl"
-        
+
+    @property
+    def db_dir(self):
+        return os.path.join("data", "database", self.db_name, "records")
 
     def get_records(self, bypass_cache=False):
         """Get a list of database ECG records
@@ -23,7 +26,7 @@ class DatabaseProvider(object):
             [(signal, annotation), ...]
         """
 
-        db_dir = os.path.join("data", "database", self.db_name, "records")
+        db_dir = self.db_dir
 
         if not os.path.exists(db_dir):
             create_dirs([db_dir])
@@ -33,6 +36,10 @@ class DatabaseProvider(object):
             self._save_records(db_dir)
         
         return self._load_records(db_dir)
+
+    def get_record(self, record_name):
+        record_dir = os.path.join(self.db_dir, record_name)
+        return self.__load_record(record_dir)
 
     def _save_records(self, db_dir):
         record_names = wfdb.io.get_record_list(self.db_name, records="all")

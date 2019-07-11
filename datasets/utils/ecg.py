@@ -15,21 +15,25 @@ class ECG(object):
             denotes starting point of related heart rhythm sequence in frames, e.g [34, 2300, 7500, ...]     
         """
         self.name = name
-        self.signal = signal or []
+        self.signal = signal if signal is not None else []
         self.signal_len = signal_len or len(signal)
         self.labels = [l.rstrip("\x00") for l in labels] 
-        self.timecodes = timecodes
+        self.timecodes = np.array(timecodes)
         self.fs = fs
 
-    def get_examples_metadata(self, duration, rhythm_filter):
+    def get_examples_metadata(self, duration, rhythm_filter, rhythm_map=None):
         metadata = []
+        rhythm_map = rhythm_map or {}
 
-        for label, start, end in zip(self.labels, self.timecodes, self.timecodes[1:] + [self.signal_len]):
+        for label, start, end in zip(self.labels, self.timecodes, np.append(self.timecodes[1:], self.signal_len)):
+            if label in rhythm_map:
+                label = rhythm_map[label]
+
             match = self.__match(label, rhythm_filter)
             if match:
                 metadata.extend(self.__cut_examples_metadata(
                     example_duration=duration,
-                    label=label,
+                    label=match.name,
                     start=start,
                     end=end,
                     overlap=match.overlap
