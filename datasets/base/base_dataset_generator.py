@@ -1,4 +1,6 @@
 import os
+import json
+import numpy as np
 import utils.helpers as helpers
 import utils.dirs as dirs
 import datasets.utils.equalizer as eq
@@ -45,6 +47,13 @@ class BaseDatasetGenerator(object):
     def test_set_path(self):
         return [os.path.join(self.examples_dir, "TEST")]
 
+    @property
+    def stats(self):
+        with open(os.path.join(self.examples_dir, "stats.json"), "w") as f:
+            data = json.load(f)
+            return data["mean"], data["std"]
+
+
     def generate(self):
         if not self.examples_exists:
             print("generating examples...")
@@ -69,6 +78,7 @@ class BaseDatasetGenerator(object):
             folders[str(i+1)] = examples_meta
 
             #get examples data and serialize to disk
+            all_data = []
             for folder, examples_meta in folders.items():
                 for generator_name, generator in self._generators.items():
                     source_ids = set(m.source_id for m in examples_meta)
@@ -76,7 +86,18 @@ class BaseDatasetGenerator(object):
                         metadata_group = [m for m in examples_meta if m.source_id == source_id and m.source_type == generator_name]
                         examples = generator.get_examples(source_id, metadata_group)
                         self._save(examples, folder)
+                        all_data.extend([e.data for e in examples])
 
+            all_data = np.asarray(all_data)
+            stats = {
+                "min": np.min(all_data),
+                "max": np.max(all_data),
+                "mean": np.mean(all_data),
+                "std": np.std(all_data)
+            }
+            with open(os.path.join(self.examples_dir, "stats.json"), "w") as f:
+                json.dump(stats, f, sort_keys=False, indent=4)
+            
             print("generating examples complete")
         else:
             print("examples for current configuration already exist")
