@@ -3,7 +3,6 @@ import os
 import utils.helpers as helpers
 import torch
 from torchvision import transforms
-from datasets.common.examples_provider import ExamplesProvider
 from datasets.common.dataset import Dataset
 from utils.config import Config
 from training.spec import EvalSpec
@@ -24,10 +23,11 @@ def main():
         config = Config(args.config)
 
         net = helpers.get_class(config.settings.model.name)(config.settings)
-        dataset_provider = helpers.get_class(config.settings.dataset.dataset_provider)(config.settings.dataset.params)
-        file_reader = helpers.get_class(config.settings.dataset.file_provider)()
+        dataset_generator = helpers.get_class(config.settings.dataset.dataset_generator)(config.settings.dataset.params, config.settings.dataset.sources)
+        examples_provider_ctor = helpers.get_class(config.settings.dataset.examples_provider)
         
-        class_map = {val: key for key, val in config.settings.dataset.params.label_map.items()}
+        class_map = { val.label_map: key for key, val in config.settings.dataset.params.class_settings.items() }
+        label_map = { val: key for key, val in class_map.items() }
         eval_spec = EvalSpec(
             dataset=None,
             class_num=config.class_num,
@@ -38,7 +38,7 @@ def main():
         _, checkpoints = stats.max_accuracy(config.model_dir, config.k)
 
         if config.settings.dataset.params.normalize_input:
-            mean, std = dataset_provider.stats
+            mean, std = dataset_generator.stats
             transform = transforms.Compose([
                 transforms.ToTensor(),
                 transforms.Normalize(mean=[mean], std=[std]),
@@ -49,12 +49,10 @@ def main():
         
         confusion_mtrx = ConfusionMatrix([], [], config.class_num)
         if config.k == 2:
-            examples = ExamplesProvider(
-                folders=dataset_provider.eval_set_path(),
-                file_reader=file_reader,
-                label_map=config.settings.dataset.params.label_map,
+            examples = examples_provider_ctor(
+                folders=dataset_generator.eval_set_path(),
+                label_map=label_map,
                 equalize_labels=True
-
             )
             eval_spec.dataset = Dataset(examples, transform=transform)
             model = Model.restore(net, config.model_dir, checkpoints)
@@ -62,10 +60,9 @@ def main():
             confusion_mtrx.add(cm)
         else:
             for i in range(config.k):
-                examples = ExamplesProvider(
-                    folders=dataset_provider.eval_set_path(eval_fold_number=i),
-                    file_reader=file_reader,
-                    label_map=config.settings.dataset.params.label_map,
+                examples = examples_provider_ctor(
+                    folders=dataset_generator.eval_set_path(eval_fold_number=i),
+                    label_map=label_map,
                     equalize_labels=True
                 )
                 eval_spec.dataset = Dataset(examples, transform=transform)
