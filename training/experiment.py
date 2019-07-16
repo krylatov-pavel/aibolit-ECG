@@ -11,7 +11,6 @@ from utils.dirs import create_dirs
 from utils.helpers import get_class
 from models.common.ensemble import Ensemble
 from datasets.common.dataset import Dataset
-from datasets.common.examples_provider import ExamplesProvider
 
 TRAIN = "train"
 EVAL = "eval"
@@ -21,8 +20,8 @@ def squeeze(x):
 
 class Experiment():
     def __init__(self, config, model_dir):
-        self._dataset_provider = get_class(config.dataset.dataset_provider)(config.dataset.params)
-        self._file_provider = get_class(config.dataset.file_provider)()
+        self._dataset_generator = get_class(config.dataset.dataset_generator)(config.dataset.params, config.dataset.sources)
+        self._examples_provider = get_class(config.dataset.examples_provider)
 
         self._config = config
         self._model_dir = model_dir
@@ -32,8 +31,8 @@ class Experiment():
         self._optimizer = config.model.hparams.optimizer.type
         self._optimizer_params = config.model.hparams.optimizer.params
 
-        self._class_num = len(config.dataset.params.label_map)
-        self._label_map = config.dataset.params.label_map
+        self._class_num = len(config.dataset.params.class_settings)
+        self._label_map = { lbl: c.label_map for lbl, c in config.dataset.params.class_settings.items() }
         self._normalize_input = config.dataset.params.normalize_input
 
         self._iteration = config.iteration
@@ -69,9 +68,8 @@ class Experiment():
         else:
             raise ValueError("invalid k")
 
-        examples = ExamplesProvider(
-            folders=self._dataset_provider.test_set_path(),
-            file_reader=self._file_provider,
+        examples = self._examples_provider(
+            folders=self._dataset_generator.test_set_path(),
             label_map=self._label_map
         )
 
@@ -93,18 +91,25 @@ class Experiment():
         net = get_class(self._config.model.name)(self._config)
 
         if self._normalize_input:
-            mean, std = self._dataset_provider.stats
+            mean, std = self._dataset_generator.stats
             transform = transforms.Compose([
                 transforms.ToTensor(),
                 transforms.Normalize(mean=[mean], std=[std]),
                 transforms.Lambda(squeeze)
             ])
         else:
-            transform = None 
+            transform = None
 
-        train_examples = ExamplesProvider(
-            folders=self._dataset_provider.train_set_path(fold_num),
-            file_reader=self._file_provider,
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        
+        last_checkpoint = checkpoint.last(model_dir)
+        if last_checkpoint:
+            model = Model.restore(net, model_dir, last_checkpoint, device=device)
+        else:
+            model = Model(net, model_dir, device=device)
+
+        train_examples = self._examples_provider(
+            folders=self._dataset_generator.train_set_path(fold_num),
             label_map=self._label_map
         )
 
@@ -118,9 +123,8 @@ class Experiment():
             early_stopper_params=self._early_stopper_params
         )
 
-        eval_examples = ExamplesProvider(
-            folders=self._dataset_provider.eval_set_path(fold_num),
-            file_reader=self._file_provider,
+        eval_examples = self._examples_provider(
+            folders=self._dataset_generator.eval_set_path(fold_num),
             label_map=self._label_map,
             equalize_labels=True
         )
@@ -133,17 +137,13 @@ class Experiment():
             class_map={value: key for key, value in self._label_map.items()},
             keep_n_checkpoints=self._keep_n_checkpoints
         )
-
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        
-        last_checkpoint = checkpoint.last(model_dir)
-        if last_checkpoint:
-            model = Model.restore(net, model_dir, last_checkpoint, device=device)
-        else:
-            model = Model(net, model_dir, device=device)
         
         start = time.perf_counter()
-        model.train_and_evaluate(train_spec, eval_spec)
+        try:
+            model.train_and_evaluate(train_spec, eval_spec)
+        finally:
+            train_examples.close()
+            eval_examples.close()
         end = time.perf_counter()
         print("execution time: {}s".format(end - start))
 

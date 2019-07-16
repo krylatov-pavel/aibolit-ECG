@@ -11,7 +11,7 @@ def main():
     if args.config:
         config = Config(args.config)
 
-        dataset_provider = get_class(config.settings.dataset.dataset_provider)(config.settings.dataset.params)
+        dataset_provider = get_class(config.settings.dataset.dataset_generator)(config.settings.dataset.params, config.settings.dataset.sources)
         dataset_provider.generate()
     else:
         print("configuration file name is required. use -h for help")

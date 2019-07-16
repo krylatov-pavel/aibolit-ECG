@@ -1,7 +1,7 @@
 {
     "model": {
         "name": "models.aibolit.cnn_5layer.CNN",
-        "experiment": "aibolit_7class_5layer_2fold_pvc",
+        "experiment": "aibolit_8class_5layer_2fold_h5",
         "hparams": {
             "optimizer": {
                 "type": "adam",
@@ -20,66 +20,44 @@
         }
     },
     "dataset": {
-        "dataset_provider": "datasets.aibolit.file_dataset_provider.FileDatasetProvider",
-        "file_provider": "datasets.common.wavedata_provider.WavedataProvider",
+        "dataset_generator": "datasets.common.h5_dataset_generator.H5DatasetGenerator",
+        "examples_provider": "datasets.common.h5_examples_provider.H5ExamplesProvider",
         "params": {
-            "source_name": "aibolit",
-            "bypass_cache": false,
             "example_duration": 3.3,
-            "fs": 1000,
-            "resample_fs": 250,
-            "class_settings": [
-                {
-                    "name": "PVC",
-                    "rhythm": "pvc",
-                    "overlap": 0.662,
+            "example_fs": 250,
+            "class_settings": {
+                "N": {
+                    "label_map": 0,
+                    "equalize_distribution": 1.4
+                },
+                "R": {
+                    "label_map": 1,
                     "equalize_distribution": false
                 },
-                {
-                    "name": "R",
-                    "rhythm": "r",
-                    "overlap": 0.662,
+                "AFIB": {
+                    "label_map": 2,
                     "equalize_distribution": false
                 },
-                {
-                    "name": "AFIB",
-                    "rhythm": "afib",
-                    "overlap": 0.594,
+                "L": {
+                    "label_map": 3,
                     "equalize_distribution": false
                 },
-                {
-                    "name": "L",
-                    "rhythm": "l",
-                    "overlap": 0.594,
+                "AV": {
+                    "label_map": 4,
                     "equalize_distribution": 1
                 },
-                {
-                    "name": "AV",
-                    "rhythm": "av",
-                    "overlap": 0.493,
+                "AR": {
+                    "label_map": 5,
                     "equalize_distribution": 1
                 },
-                {
-                    "name": "AR",
-                    "rhythm": "ar",
-                    "overlap": 0,
-                    "equalize_distribution": 1
+                "PVC": {
+                    "label_map": 6,
+                    "equalize_distribution": false
                 },
-                {
-                    "name": "N",
-                    "rhythm": "n",
-                    "overlap": 0,
-                    "equalize_distribution": 1.5
+                "CLC": {
+                    "label_map": 7,
+                    "equalize_distribution": false
                 }
-            ],
-            "label_map": {
-                "N": 0,
-                "R": 1,
-                "L": 2,
-                "AV": 3,
-                "AR": 4,
-                "AFIB": 5,
-                "PVC": 6
             },
             "split_ratio": [
                 0.8,
@@ -87,23 +65,62 @@
             ],
             "test_set_size": 0,
             "normalize_input": false
-        }
+        },
+        "sources": [{
+            "name": "aibolit",
+            "examples_generator": "datasets.aibolit.cardian_examples_generator.CardianExamplesGenerator",
+            "fs": 1000,
+            "resample_fs": 250,
+            "class_settings": {
+                "CLC": {
+                    "rhythm": "clc",
+                    "overlap": 0.71
+                },
+                "PVC": {
+                    "rhythm": "pvc",
+                    "overlap": 0.71
+                },
+                "R": {
+                    "rhythm": "r",
+                    "overlap": 0.662
+                },
+                "AFIB": {
+                    "rhythm": "afib",
+                    "overlap": 0.493
+                },
+                "L": {
+                    "rhythm": "l",
+                    "overlap": 0.493
+                },
+                "AV": {
+                    "rhythm": "av",
+                    "overlap": 0.493
+                },
+                "AR": {
+                    "rhythm": "ar",
+                    "overlap": 0
+                },
+                "N": {
+                    "rhythm": "n",
+                    "overlap": 0
+                }
+            }
+        }]
     },
-    "max_epochs": 220,
+    "max_epochs": 50,
     "keep_n_checkpoints": 4,
     "early_stopper_params": {
-        "patience": 7
+        "patience": 8
     },
     "eval_scheduler_params": {
         "interval": 3,
         "decrease_step": 1,
-        "decrease_timeout": 12
+        "decrease_timeout": 15
     },
     "lr_scheduler_params": {
         "factor": 0.2,
         "patience": 4
     },
-    "wait_improvement_n_evals": 4,
     "params_space": "configs.hyperopt_spaces.aibolit_5layer.Space",
     "iteration": "default"
 }

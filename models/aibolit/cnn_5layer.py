@@ -7,8 +7,8 @@ class CNN(nn.Module):
     def __init__(self, config):
         super(CNN, self).__init__()
 
-        class_num = len(config.dataset.params["label_map"])
-        input_size = config.dataset.params["example_duration"] * config.dataset.params["resample_fs"]
+        class_num = len(config.dataset.params["class_settings"])
+        input_size = config.dataset.params["example_duration"] * config.dataset.params["example_fs"]
 
         filters_num = int(config.model.hparams["filters_num"])
         dropout = config.model.hparams["dropout"]

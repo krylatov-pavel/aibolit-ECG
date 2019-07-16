@@ -5,7 +5,7 @@ from datasets.utils.data_structures import ExampleMetadata
 from datasets.utils.data_structures import Example
 
 class ECG(object):
-    def __init__(self, name, labels, timecodes, fs, signal=None, signal_len=None):
+    def __init__(self, source_type, name, labels, timecodes, fs, signal=None, signal_len=None):
         """
         Args:
             name: record name
@@ -14,6 +14,7 @@ class ECG(object):
             timecodes: 1d list of timecodes corresponding to heart rhythm labels, each time code
             denotes starting point of related heart rhythm sequence in frames, e.g [34, 2300, 7500, ...]     
         """
+        self.source_type = source_type
         self.name = name
         self.signal = signal if signal is not None else []
         self.signal_len = signal_len or len(signal)
@@ -79,6 +80,7 @@ class ECG(object):
 
             slices[i] = ExampleMetadata(
                 label=label,
+                source_type=self.source_type,
                 source_id=self.name,
                 start=start_pos,
                 end=end_pos

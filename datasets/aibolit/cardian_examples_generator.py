@@ -1,33 +1,24 @@
 import os
 import json
-from datasets.utils.ecg import ECG
-from datasets.base.base_dataset_provider import BaseDatasetProvider
-from datasets.common.wavedata_provider import WavedataProvider
 import utils.helpers as helpers
+from datasets.utils.ecg import ECG
+from datasets.utils.data_structures import ExampleMetadata, Example
+from datasets.base.base_examples_generator import BaseExamplesGenerator
 
-class FileDatasetProvider(BaseDatasetProvider):
-    def __init__(self, params):
-        super(FileDatasetProvider, self).__init__(params, WavedataProvider())
+class CardianExamplesGenerator(BaseExamplesGenerator):
+    def __init__(self, common_params, source_params):
+        self._example_duration = common_params.example_duration
+        self._resample_fs = common_params.example_fs
 
-        self._rhythm_filter = { c.rhythm: c for _, c in self._class_settings.items() }
-
-        self._fs = params.fs
-        self._resample_fs = params.get("resample_fs")
-        self._example_duration = params.example_duration
-
-    ###abstract methods implementation
-
-    def _dataset_flavor(self):
-        classes = ",".join(["{}{}".format("" if (not s.equalize_distribution) or s.equalize_distribution == 1 else s.equalize_distribution, c)
-            for c, s in self._class_settings.items()])
-        return "{}fold_{}s_({})_{}hz".format(
-            self._k,
-            self._example_duration,
-            classes,
-            self._resample_fs or self._fs
-        )
-
-    def _get_examples_meta(self):
+        self._fs = source_params.fs
+        self._source_name = source_params.name
+        self._class_settings = source_params.class_settings
+        self._rhythm_filter = {}
+        for name, c in source_params.class_settings.items():
+            c.update({"name": name})
+            self._rhythm_filter[c.rhythm] = c
+    
+    def get_examples_meta(self):
         ecgs = self.__ecg_generator()
 
         metadata = [e.get_examples_metadata(self._example_duration, self._class_settings) for e in ecgs]
@@ -35,7 +26,7 @@ class FileDatasetProvider(BaseDatasetProvider):
 
         return metadata
 
-    def _get_examples(self, source_id, metadata):
+    def get_examples(self, source_id, metadata):
         examples = []
 
         fname = "{}.json".format(source_id)
@@ -45,6 +36,7 @@ class FileDatasetProvider(BaseDatasetProvider):
             with open(fpath, "r") as json_file:
                 signal = json.load(json_file)
                 ecg = ECG(
+                    source_type=self._source_name,
                     name=source_id,
                     labels=[label],
                     timecodes=[0],
@@ -77,6 +69,7 @@ class FileDatasetProvider(BaseDatasetProvider):
                     with open(f, "r") as json_file:
                         signal = json.load(json_file)
                         ecg = ECG(
+                            source_type=self._source_name,
                             name=os.path.splitext(os.path.basename(f))[0],
                             labels=[label],
                             timecodes=[0],
