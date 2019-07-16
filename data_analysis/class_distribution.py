@@ -1,13 +1,11 @@
 import argparse
 import os
 import json
-import csv
+import h5py
 import numpy as np
 import pandas as pd
 import utils.helpers as helpers
 from utils.config import Config
-from datasets.utils.name_generator import NameGenerator
-from datasets.common.wavedata_provider import WavedataProvider
 
 def database_data(path, fs, exclude=None):
     data = []
@@ -36,27 +34,21 @@ def database_data(path, fs, exclude=None):
 def dataset_data(root, folds, fs):
     data = []
 
-    name = NameGenerator(".csv")
-    wave = WavedataProvider()
-
-    dirs = (os.path.join(root, f) for f in folds)
-    for dir in dirs:
-        fnames = (os.path.join(dir, f) for f in os.listdir(dir))
-        fnames = [f for f in fnames if os.path.isfile(f) and f.endswith(".csv")]
-
-        fold_data = [None] * len(fnames)
-        for i, fname in enumerate(fnames):
-            label = name.get_metadata(os.path.basename(fname)).label
-
-            signal = wave.read(fname)
-            duration = len(signal[0]) / fs
+    fnames = (os.path.join(root, "{}.hdf5".format(f)) for f in folds)
+    for fname in fnames:
+        with h5py.File(fname, "r") as f:
+            fold_data = [None] * len(f.keys())
+            for i, example in enumerate(f.keys()):
+                label = f[example].attrs["label"].decode("utf-8")
+                signal = f[example][:]
+                duration = len(signal) / fs
+                
+                fold_data[i] = {
+                    "label": label,
+                    "duration": duration
+                }
             
-            fold_data[i] = {
-                "label": label,
-                "duration": duration
-            }
-        
-        data.extend(fold_data)
+            data.extend(fold_data)
 
     return pd.DataFrame(data)
 
@@ -79,22 +71,22 @@ def main():
     if args.config:
         config = Config(args.config)
 
-        dataset_provider = helpers.get_class(config.settings.dataset.dataset_provider)(config.settings.dataset.params)
+        dataset_generator = helpers.get_class(config.settings.dataset.dataset_generator)(config.settings.dataset.params, config.settings.dataset.sources)
         
         if args.db:
             db = database_data(
                 "D:\\Study\\Aibolit-ECG\\data\\database\\aibolit",
-                config.settings.dataset.params.get("fs"),
-                ["N", "n", "ISH"]
+                1000,
+                ["N", "n"]
             )
             db = relative_duration(db)
             print(db)
         
         if args.ds:
             ds = dataset_data(
-                dataset_provider.examples_dir,
+                dataset_generator.examples_dir,
                 [str(i) for i in range(config.k)],
-                config.settings.dataset.params.get("resample_fs")
+                config.settings.dataset.params.get("example_fs")
             )
             ds = relative_duration(ds)
             print(ds)
