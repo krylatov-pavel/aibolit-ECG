@@ -49,7 +49,7 @@ class BaseDatasetGenerator(object):
 
     @property
     def stats(self):
-        with open(os.path.join(self.examples_dir, "stats.json"), "w") as f:
+        with open(os.path.join(self.examples_dir, "stats.json"), "r") as f:
             data = json.load(f)
             return data["mean"], data["std"]
 
