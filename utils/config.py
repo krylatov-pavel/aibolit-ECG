@@ -16,11 +16,16 @@ class Config(object):
     @property
     def model_dir(self):
         iteration = self.settings.iteration if "iteration" in self.settings else "default"
+        
+        namespace = self.settings.model.name.split(".")[1]
+        model_class = self.settings.model.name.split(".")[2]
 
+        experiment_name = "{}class_{}_{}fold".format(self.class_num, model_class, self.k)
+        
         return os.path.join(
             "data\\experiments",
-            self.settings.model.name.split(".")[-1],
-            self.settings.model.experiment if hasattr(self.settings.model, "experiment") else self.settings.experiment,
+            namespace,
+            self.settings.model.experiment if hasattr(self.settings.model, "experiment") else experiment_name,
             iteration
         )
 

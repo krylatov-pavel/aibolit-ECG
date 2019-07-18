@@ -25,7 +25,6 @@ class Experiment():
 
         self._config = config
         self._model_dir = model_dir
-        self._name = config.model.experiment
         self._k = len(config.dataset.params.split_ratio)
 
         self._optimizer = config.model.hparams.optimizer.type

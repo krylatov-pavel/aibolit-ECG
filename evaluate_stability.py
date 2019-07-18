@@ -15,7 +15,7 @@ def main():
     if args.config:
         config = Config(args.config)
         base_iteration = config.settings.iteration
-        base_accuracy = stats.max_accuracy(config.model_dir, config.k)
+        base_accuracy, _ = stats.max_accuracy(config.model_dir, config.k)
         
         accuracy = [None] * args.iterations
         for i in range(args.iterations):
@@ -27,14 +27,14 @@ def main():
                 experiment.run()
                 experiment.plot_metrics()
 
-            accuracy[i] = stats.max_accuracy(config.model_dir, config.k)
+            accuracy[i], _ = stats.max_accuracy(config.model_dir, config.k)
 
         accuracy.append(base_accuracy)
 
-        print("max: {}", np.max(accuracy))
-        print("min: {}", np.min(accuracy))
-        print("mean: {}", np.mean(accuracy))
-        print("std: {}", np.std(accuracy))
+        print("max:\t{:.3f}".format(np.max(accuracy)))
+        print("min:\t{:.3f}".format(np.min(accuracy)))
+        print("mean:\t{:.3f}".format(np.mean(accuracy)))
+        print("std:\t{:.3f}".format(np.std(accuracy)))
     else:
         print("configuration file name is required. use -h for help")
 if __name__ == "__main__":

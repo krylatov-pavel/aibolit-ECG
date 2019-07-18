@@ -47,7 +47,7 @@ class ECG(object):
 
         resample_rate = resample_fs / self.fs if resample_fs else 1
         for i, meta in enumerate(metadata):
-            signal = list(self.signal[meta.start:meta.end])
+            signal = np.asarray(self.signal[meta.start:meta.end])
             
             if resample_rate != 1:
                 resample_fn = scipy.interpolate.interp1d(np.arange(len(signal)), signal)
