@@ -1,19 +1,19 @@
 {
     "model": {
-        "name": "models.aibolit.cnn_1440_5l_9k.CNN",
+        "name": "models.aibolit.cnn_8_layer.CNN",
         "hparams": {
             "optimizer": {
                 "type": "adam",
                 "params": {
-                    "lr": 0.005393,
-                    "weight_decay": 0.00016
+                    "lr": 0.003048,
+                    "weight_decay": 0.00075
                 }
             },
-            "dropout": 0.3973,
+            "dropout": 0.36,
             "train_batch_size": 32,
             "eval_batch_size": 100,
-            "filters_num": 60,
-            "fc_units": 45,
+            "filters_num": 78,
+            "fc_units": 35,
             "fc_layers": 3,
             "activation_fn": "torch.nn.ReLU"
         }
@@ -23,7 +23,7 @@
         "examples_provider": "datasets.common.h5_examples_provider.H5ExamplesProvider",
         "params": {
             "example_duration": 4,
-            "example_fs": 360,
+            "example_fs": 250,
             "class_settings": {
                 "N": {
                     "label_map": 0,
@@ -63,12 +63,13 @@
                 0.2
             ],
             "test_set_size": 0,
-            "normalize_input": true
+            "normalize_input": false
         },
         "sources": [{
             "name": "aibolit",
             "examples_generator": "datasets.aibolit.cardian_examples_generator.CardianExamplesGenerator",
             "fs": 1000,
+            "resample_fs": 250,
             "class_settings": {
                 "CLC": {
                     "rhythm": "clc",
@@ -105,7 +106,7 @@
             }
         }]
     },
-    "max_epochs": 60,
+    "max_epochs": 50,
     "keep_n_checkpoints": 4,
     "early_stopper_params": {
         "patience": 8
@@ -120,5 +121,5 @@
         "patience": 4
     },
     "params_space": "configs.hyperopt_spaces.aibolit_cnn.Space",
-    "iteration": "default"
+    "iteration": "15.2"
 }

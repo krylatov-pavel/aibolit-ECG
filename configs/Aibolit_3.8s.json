@@ -1,6 +1,6 @@
 {
     "model": {
-        "name": "models.aibolit.cnn_1440_5l_9k.CNN",
+        "name": "models.aibolit.cnn_3800_6l_9k.CNN",
         "hparams": {
             "optimizer": {
                 "type": "adam",
@@ -22,8 +22,8 @@
         "dataset_generator": "datasets.common.h5_dataset_generator.H5DatasetGenerator",
         "examples_provider": "datasets.common.h5_examples_provider.H5ExamplesProvider",
         "params": {
-            "example_duration": 4,
-            "example_fs": 360,
+            "example_duration": 3.8,
+            "example_fs": 1000,
             "class_settings": {
                 "N": {
                     "label_map": 0,
@@ -72,27 +72,27 @@
             "class_settings": {
                 "CLC": {
                     "rhythm": "clc",
-                    "overlap": 0.75
+                    "overlap": 0.77
                 },
                 "PVC": {
                     "rhythm": "pvc",
-                    "overlap": 0.75
+                    "overlap": 0.729
                 },
                 "R": {
                     "rhythm": "r",
-                    "overlap": 0.7
+                    "overlap": 0.675
                 },
                 "AFIB": {
                     "rhythm": "afib",
-                    "overlap": 0.5
+                    "overlap": 0.594
                 },
                 "L": {
                     "rhythm": "l",
-                    "overlap": 0.5
+                    "overlap": 0.458
                 },
                 "AV": {
                     "rhythm": "av",
-                    "overlap": 0.5
+                    "overlap": 0.458
                 },
                 "AR": {
                     "rhythm": "ar",
