@@ -29,3 +29,23 @@ def max_accuracy(model_dir, k):
         accuracy = np.mean(accuracy)
 
     return accuracy, step
+
+def accuracy_stats(model_dir, k):
+    if k > 2:
+        accuracy = [None] * k
+        for i in range(k):
+            log_dir = os.path.join(model_dir, "fold_{}".format(i))
+            log = Logger(log_dir).read(fold_num=i)
+            accuracy[i], _ = Logger.max_accuracy(log)
+
+        mean = np.mean(accuracy)
+        std = np.std(accuracy)
+        min = np.min(accuracy)
+        max = np.max(accuracy)
+    else:
+        log = Logger(model_dir).read()
+        accuracy, _ = Logger.max_accuracy(log)
+        mean = min = max = accuracy
+        std = 0
+        
+    return mean, std, min, max

@@ -75,7 +75,7 @@ def main():
         
         if args.db:
             db = database_data(
-                "D:\\Study\\Aibolit-ECG\\data\\database\\aibolit",
+                os.path.join("data", "database", config.settings.dataset.sources[0].name),
                 1000,
                 ["N", "n"]
             )

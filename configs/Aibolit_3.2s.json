@@ -22,7 +22,7 @@
         "dataset_generator": "datasets.common.h5_dataset_generator.H5DatasetGenerator",
         "examples_provider": "datasets.common.h5_examples_provider.H5ExamplesProvider",
         "params": {
-            "example_duration": 4,
+            "example_duration": 3.2,
             "example_fs": 250,
             "class_settings": {
                 "N": {
@@ -75,27 +75,27 @@
             "class_settings": {
                 "CLC": {
                     "rhythm": "clc",
-                    "overlap": 0.835
+                    "overlap": 0.765
                 },
                 "PVC": {
                     "rhythm": "pvc",
-                    "overlap": 0.835
+                    "overlap": 0.765
                 },
                 "R": {
                     "rhythm": "r",
-                    "overlap": 0.75
+                    "overlap": 0.647
                 },
                 "AFIB": {
                     "rhythm": "afib",
-                    "overlap": 0.5
+                    "overlap": 0.293
                 },
                 "L": {
                     "rhythm": "l",
-                    "overlap": 0.5
+                    "overlap": 0.293
                 },
                 "AV": {
                     "rhythm": "av",
-                    "overlap": 0.25
+                    "overlap": 0
                 },
                 "AR": {
                     "rhythm": "ar",

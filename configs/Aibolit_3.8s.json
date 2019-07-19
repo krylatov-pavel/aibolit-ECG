@@ -1,6 +1,6 @@
 {
     "model": {
-        "name": "models.aibolit.cnn_3800_6l_9k.CNN",
+        "name": "models.aibolit.cnn_generic_5l_9k.CNN",
         "hparams": {
             "optimizer": {
                 "type": "adam",
@@ -12,7 +12,7 @@
             "dropout": 0.3973,
             "train_batch_size": 32,
             "eval_batch_size": 100,
-            "filters_num": 60,
+            "filters_num": 40,
             "fc_units": 45,
             "fc_layers": 3,
             "activation_fn": "torch.nn.ReLU"
@@ -23,7 +23,7 @@
         "examples_provider": "datasets.common.h5_examples_provider.H5ExamplesProvider",
         "params": {
             "example_duration": 3.8,
-            "example_fs": 1000,
+            "example_fs": 250,
             "class_settings": {
                 "N": {
                     "label_map": 0,
@@ -39,7 +39,7 @@
                 },
                 "L": {
                     "label_map": 3,
-                    "equalize_distribution": false
+                    "equalize_distribution": 1
                 },
                 "AV": {
                     "label_map": 4,
@@ -59,32 +59,35 @@
                 }
             },
             "split_ratio": [
-                0.8,
+                0.2,
+                0.2,
+                0.2,
+                0.2,
                 0.2
             ],
             "test_set_size": 0,
-            "normalize_input": true
+            "normalize_input": false
         },
         "sources": [{
-            "name": "aibolit",
+            "name": "aibolit\\dataset-standard",
             "examples_generator": "datasets.aibolit.cardian_examples_generator.CardianExamplesGenerator",
             "fs": 1000,
             "class_settings": {
                 "CLC": {
                     "rhythm": "clc",
-                    "overlap": 0.77
+                    "overlap": 0.82
                 },
                 "PVC": {
                     "rhythm": "pvc",
-                    "overlap": 0.729
+                    "overlap": 0.82
                 },
                 "R": {
                     "rhythm": "r",
-                    "overlap": 0.675
+                    "overlap": 0.73
                 },
                 "AFIB": {
                     "rhythm": "afib",
-                    "overlap": 0.594
+                    "overlap": 0.458
                 },
                 "L": {
                     "rhythm": "l",
@@ -92,7 +95,7 @@
                 },
                 "AV": {
                     "rhythm": "av",
-                    "overlap": 0.458
+                    "overlap": 0.186
                 },
                 "AR": {
                     "rhythm": "ar",
@@ -106,7 +109,7 @@
         }]
     },
     "max_epochs": 60,
-    "keep_n_checkpoints": 4,
+    "keep_n_checkpoints": 1,
     "early_stopper_params": {
         "patience": 8
     },
