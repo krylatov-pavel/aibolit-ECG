@@ -1,18 +1,15 @@
 import os
+import h5py
 from datasets.utils.name_generator import NameGenerator
 
 def get_records(path):
-    fnames = (os.path.join(path, f) for f in os.listdir(path))
-    fnames = (os.path.basename(f) for f in fnames if os.path.isfile(f))
-
-    names = NameGenerator(".csv")
-    meta = (names.get_metadata(f) for f in fnames)
-    records = [r.source_id + r.label for r in meta]
+    with h5py.File(path, "r") as f:
+        records = [f[key].attrs["source_id"].decode("utf-8") + f[key].attrs["label"].decode("utf-8") for  key in f.keys()]
     return records
 
 def find_set_overlap(base_path):
     set_dirs = (os.path.join(base_path, d) for d in os.listdir(base_path)) 
-    set_dirs = [d for d in set_dirs if os.path.isdir(d)]
+    set_dirs = [d for d in set_dirs if d.endswith(".hdf5")]
 
     has_overlap = False
 

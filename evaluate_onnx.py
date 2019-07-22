@@ -4,11 +4,9 @@ import torch.utils.data
 import onnxruntime as rt
 import numpy as np
 from datasets.common.dataset import Dataset
-from datasets.common.examples_provider import ExamplesProvider
 from training.metrics.confusion_matrix import ConfusionMatrix
 from utils.helpers import get_class
 from utils.config import Config 
-from datasets.MIT.common.wavedata_provider import WavedataProvider
 from torch.utils import data
 from torchvision import transforms
 
@@ -23,19 +21,19 @@ def main():
     if args.config:
         config = Config(args.config)
 
-        dataset_provider = get_class(config.settings.dataset.dataset_provider)(config.settings.dataset.params)
-        file_reader = get_class(config.settings.dataset.file_provider)()
+        dataset_generator = get_class(config.settings.dataset.dataset_generator)(config.settings.dataset.params, config.settings.dataset.sources)
+        examples_provider = get_class(config.settings.dataset.examples_provider)
         batch_size = config.settings.model.hparams.eval_batch_size
+        label_map = { lbl: c.label_map for lbl, c in config.settings.dataset.params.class_settings.items() }
         
-        examples = ExamplesProvider(
-            folders=dataset_provider.test_set_path(),
-            file_reader=file_reader,
-            label_map=config.settings.dataset.params.label_map,
+        examples = examples_provider(
+            folders=dataset_generator.test_set_path(),
+            label_map=label_map,
             equalize_labels=True
         )
 
         if config.settings.dataset.params.normalize_input:
-            mean, std = dataset_provider.stats
+            mean, std = dataset_generator.stats
             transform = transforms.Compose([
                 transforms.ToTensor(),
                 transforms.Normalize(mean=[mean], std=[std]),
@@ -47,7 +45,7 @@ def main():
         dataset = Dataset(examples, transform=transform)
         data_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False)
 
-        cm = ConfusionMatrix([], [], len(config.settings.dataset.params.label_map))
+        cm = ConfusionMatrix([], [], len(label_map))
 
         fpath = os.path.join(config.model_dir, "model.onnx")
         sess = rt.InferenceSession(fpath)
@@ -62,7 +60,7 @@ def main():
             cm.append(predictions, labels)
 
         print("accuracy: ", cm.accuracy())
-        class_map = {value: key for key, value in config.settings.dataset.params.label_map.items()}
+        class_map = {value: key for key, value in label_map.items()}
         class_accuracy = cm.class_accuracy()
         for i, acc in enumerate(class_accuracy):
             print("accuracy\t{}\t{:.3f}".format(class_map[i], acc))
