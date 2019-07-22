@@ -1,4 +1,5 @@
 import os
+import random
 import json
 import utils.helpers as helpers
 from datasets.utils.ecg import ECG
@@ -48,6 +49,53 @@ class CardianExamplesGenerator(BaseExamplesGenerator):
             examples.extend(ecg.get_examples(label_metadata, resample_fs=self._resample_fs))
         
         return examples
+
+    def split_examples(self, metadata, first_fraction):
+        first_group = []
+        second_group = []
+
+        labels = set(m.label for m in metadata)
+        for label in labels:
+            class_metadata = [m for m in metadata if m.label == label]
+
+            source_ids = list(set(m.source_id for m in class_metadata))
+            random.shuffle(source_ids)
+            class_metadata = [[m for m in metadata if m.source_id == source_id] for source_id in source_ids]
+            class_metadata = helpers.flatten_list(class_metadata)
+
+            split_point = int(len(class_metadata) * first_fraction)
+            split_point, found = self.__find_best_split_point(class_metadata, split_point)
+
+            if not found:
+                print("Warning: couldn't find valid split, class {}, ratio {}:{2}".format(label, first_fraction, 1-first_fraction))
+
+            first_group.extend(class_metadata[:split_point])
+            second_group.extend(class_metadata[split_point:])
+
+        return first_group, second_group
+
+    def __find_best_split_point(self, metadata, split_point):
+        def is_valid_split(metadata, split_point):
+           return metadata[split_point].source_id != metadata[split_point - 1].source_id 
+
+        if is_valid_split(metadata, split_point):
+            return split_point, True
+        else:
+            found = False
+            for distance in range(1, max(split_point, len(metadata) - split_point - 1)):
+                split_point_left = split_point - distance
+                if split_point_left > 0 and is_valid_split(metadata, split_point_left):
+                    split_point = split_point_left
+                    found = True
+                    break
+
+                split_point_right = split_point + distance
+                if split_point_right < (len(metadata) - 1) and is_valid_split(metadata, split_point_right):
+                    split_point = split_point_right
+                    found = True
+                    break
+
+            return split_point, found
     
     ###
 
