@@ -115,15 +115,16 @@ class Model(object):
             self._net.to(self._device)
 
             file_writer = Logger(log_dir=self._model_dir)
-            tensorboard_writer = SummaryWriter(log_dir=os.path.join(self._model_dir, "tbruns"))
+            tb_writer_train = SummaryWriter(log_dir=os.path.join(self._model_dir, "tbruns/train"))
+            tb_writer_eval = SummaryWriter(log_dir=os.path.join(self._model_dir, "tbruns/eval"))
             inputs = next(iter(train_spec.dataset))[0].unsqueeze(0).to(self._device)
-            tensorboard_writer.add_graph(self._net, input_to_model=inputs)
+            tb_writer_train.add_graph(self._net, input_to_model=inputs)
 
             #evaluate initial accuracy
             metrics, _ = self.evaluate(eval_spec)
             for metric, scalar in metrics.items():
                 file_writer.add_scalar(metric, scalar, 0)
-                tensorboard_writer.add_scalar(metric, scalar, global_step=0)
+                tb_writer_train.add_scalar(metric, scalar, global_step=0)
 
             train_loader = data.DataLoader(train_spec.dataset, batch_size=train_spec.batch_size, shuffle=True, num_workers=0)
 
@@ -142,14 +143,14 @@ class Model(object):
 
                         loss_acm.next_iteration(loss.item())
 
-                tensorboard_writer.add_scalar("traing_loss", loss_acm.avg, global_step=self._curr_epoch)
+                tb_writer_train.add_scalar("loss", loss_acm.avg, global_step=self._curr_epoch)
                 
                 self._eval_scheduler.step(self._curr_epoch)
                 if self._eval_scheduler.eval or self._curr_epoch == train_spec.max_epochs:
                     metrics, _ = self.evaluate(eval_spec)
                     for metric, scalar in metrics.items():
                         file_writer.add_scalar(metric, scalar, self._curr_epoch)
-                        tensorboard_writer.add_scalar(metric, scalar, global_step=self._curr_epoch)
+                        tb_writer_eval.add_scalar(metric, scalar, global_step=self._curr_epoch)
                     
                     self._lr_scheduler.step(metrics.get("accuracy"), epoch=self._curr_epoch)
                     self._early_stopper.step(metrics.get("accuracy"), epoch=self._curr_epoch)
@@ -166,8 +167,9 @@ class Model(object):
                         keep_n_last=eval_spec.keep_n_checkpoints
                     )
 
-            tensorboard_writer.close()
-            
+            tb_writer_train.close()
+            tb_writer_eval.close()
+
             if self._early_stopper.stop:
                 print("accuracy didn't improve for last {} eval probs, interrupted on epoch {}".format(train_spec.early_stopper_params.patience, self._curr_epoch))
             elif self._curr_epoch >= train_spec.max_epochs:
@@ -178,17 +180,27 @@ class Model(object):
     def evaluate(self, eval_spec):
         self._net.eval()
 
+        loss_fn = nn.CrossEntropyLoss()
+        loss_acm = RunningAvg(0.0)
+
         cm = ConfusionMatrix([], [], eval_spec.class_num)
 
         eval_loader = data.DataLoader(eval_spec.dataset, batch_size=eval_spec.batch_size, shuffle=True, num_workers=0)
         for batch in eval_loader:
-            inputs, y = batch[0].to(self._device), batch[1]
+            inputs, y = batch[0].to(self._device), batch[1].to(self._device)
             with torch.no_grad():
                 predictions = self._net(inputs)
+                loss = loss_fn(predictions, y)
+                loss_acm.next_iteration(loss.item())
+                
                 _, predictions = torch.max(predictions, 1)
-                cm.append(predictions.cpu().numpy(), y.numpy())
+                cm.append(predictions.cpu().numpy(), y.cpu().numpy())
 
-        metrics = { "accuracy": cm.accuracy() }
+        metrics = { 
+            "accuracy": cm.accuracy(),
+            "loss": loss_acm.avg
+        }
+        
         for i, acc in enumerate(cm.class_accuracy()):
             metrics["accuracy_{}".format(eval_spec.class_map.get(i))] = acc
         
