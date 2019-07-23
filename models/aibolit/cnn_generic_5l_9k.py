@@ -14,9 +14,9 @@ class CNN(nn.Module):
         filters_num = int(config.model.hparams["filters_num"])
         dropout = config.model.hparams["dropout"]
         fc_units = int(config.model.hparams["fc_units"])
+        fc_layers = int(config.model.hparams["fc_layers"])
         activation = helpers.get_class(config.model.hparams["activation_fn"])
-
-        fc_layers = 3
+        
         kernel_size = 9
         
         shape = DataShape1d(1, input_size)
@@ -25,7 +25,7 @@ class CNN(nn.Module):
         self.fc_layers = nn.ModuleList()
 
         #layer1-5
-        for _ in range(4):  
+        for _ in range(5):  
             conv = nn.Conv1d(shape.channels, filters_num, kernel_size)
             shape.conv(filters_num, kernel_size)
             self.conv_layers.append(conv)
@@ -40,12 +40,6 @@ class CNN(nn.Module):
 
             filters_num *= 2
 
-        conv = nn.Conv1d(shape.channels, filters_num, kernel_size)
-        shape.conv(filters_num, kernel_size)
-        self.conv_layers.append(conv)
-        self.conv_layers.append(nn.BatchNorm1d(filters_num))
-        self.conv_layers.append(activation())
-
         pool_size = math.ceil(shape.shape[1] / 2)
 
         pad = shape.suggest_padding(pool_size, pool_size)
@@ -57,6 +51,7 @@ class CNN(nn.Module):
         self.flatten_size = shape.size
 
         self.fc_layers.append(nn.Linear(self.flatten_size, fc_units))
+        
         self.fc_layers.append(nn.BatchNorm1d(fc_units))
         self.fc_layers.append(nn.ReLU())
         self.fc_layers.append(nn.Dropout(dropout))

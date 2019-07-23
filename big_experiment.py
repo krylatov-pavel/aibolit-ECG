@@ -14,7 +14,7 @@ def save_json(model_dir, fname, params):
         json.dump(params, file, sort_keys=False, indent=4)
 
 def iteration_name_generator(num, directory, fs, duration):
-    prefix = "{}s_{}hz_".format(fs, duration)
+    prefix = "{}s_{}hz_".format(duration, fs)
     if os.path.exists(directory):
         existing_names = [d for d in os.listdir(directory) if os.path.isdir(os.path.join(directory, d))]
         existing_names = [d for d in existing_names if d.startswith(prefix)]
@@ -65,7 +65,7 @@ def main():
     config_tlmp = "aibolit_{}s"
     fs_options = [250, 500, 1000]
     duration_options = [3, 3.2, 3.4, 3.6, 3.8, 4]
-    iterations = 20
+    iterations = 12
 
     for duration in duration_options:
         config = Config(config_tlmp.format(duration))
