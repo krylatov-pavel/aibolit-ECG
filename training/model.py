@@ -144,6 +144,7 @@ class Model(object):
                         loss_acm.next_iteration(loss.item())
 
                 tb_writer_train.add_scalar("loss", loss_acm.avg, global_step=self._curr_epoch)
+                file_writer.add_scalar("train_loss", loss_acm.avg, self._curr_epoch)
                 
                 self._eval_scheduler.step(self._curr_epoch)
                 if self._eval_scheduler.eval or self._curr_epoch == train_spec.max_epochs:

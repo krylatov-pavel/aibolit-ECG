@@ -35,13 +35,42 @@ class Logger(object):
             data.append(data_row)
 
         df = pd.DataFrame(data)
-        return df   
+        return df 
 
     @staticmethod
-    def plot(logs, fpath):
+    def plot_loss(logs, fpath):
+        steps = logs.groupby("step")
+        
+        metrics = ["loss", "train_loss"]
+        plots = []
+        legends = []
+
+        fig = plt.figure()
+        plt.xlabel("steps")
+        plt.ylabel("loss")
+        
+        for metric in metrics:
+            m_mean = steps[metric].agg(np.mean)
+            x, y = unzip_list([(x, y) for x, y in m_mean.iteritems() if not np.isnan(y)])
+            alpha = 0.5
+
+            label = metric
+            plot, = plt.plot(x, y, alpha=alpha, label=label)
+            plots.append(plot)
+            legends.append(label)
+
+        plt.legend(plots, legends)
+        plt.legend(loc="upper left")
+        plt.grid(axis="y")
+
+        fig.savefig(fpath)
+        plt.close(fig)
+
+    @staticmethod
+    def plot_accuracy(logs, fpath):
         steps = logs.groupby("step")
 
-        metrics = list(set(logs.columns) - set(["step", "fold_num"]))
+        metrics = list(set(logs.columns) - set(["step", "fold_num", "loss", "train_loss"]))
         plots = []
         legends = []
 
@@ -55,7 +84,7 @@ class Logger(object):
 
         for metric in metrics:
             m_mean = steps[metric].agg(np.mean)
-            x, y = unzip_list(m_mean.iteritems())
+            x, y = unzip_list([(x, y) for x, y in m_mean.iteritems() if not np.isnan(y)])
             alpha = 0.5
 
             if metric == "accuracy":

@@ -13,7 +13,8 @@ def plot_metrics(model_dir, k):
             log = Logger(log_dir).read(fold_num=i)
             logs = logs.append(log, ignore_index=True)
 
-    Logger.plot(logs, os.path.join(model_dir, "plot.png"))
+    Logger.plot_accuracy(logs, os.path.join(model_dir, "accuracy.png"))
+    Logger.plot_loss(logs, os.path.join(model_dir, "loss.png"))
 
 def max_accuracy(model_dir, k):
     if k == 2:
