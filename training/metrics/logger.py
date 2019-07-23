@@ -48,6 +48,7 @@ class Logger(object):
         fig = plt.figure()
         plt.xlabel("steps")
         plt.ylabel("loss")
+        plt.ylim(bottom=0.0, top=2.5)
         
         for metric in metrics:
             m_mean = steps[metric].agg(np.mean)
@@ -111,7 +112,7 @@ class Logger(object):
         steps = logs.groupby("step")
         
         accuracy = steps.accuracy.agg(np.mean)
-        steps, accuracy = unzip_list(accuracy.iteritems())
+        steps, accuracy = unzip_list(([(x, y) for x, y in accuracy.iteritems() if not np.isnan(y)]))
         
         best_idx = np.argmax(accuracy)
 

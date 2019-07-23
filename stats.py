@@ -7,7 +7,7 @@ import training.metrics.stats as stats
 from utils.config import Config
 
 def is_training_complete(model_dir):
-    return os.path.isfile(os.path.join(model_dir, "plot.png"))
+    return os.path.isfile(os.path.join(model_dir, "accuracy.png"))
 
 def get_search_params(model_dir):
     fpath = os.path.join(model_dir, "params.json")
