@@ -10,7 +10,7 @@ class BaseExamplesProvider(object):
         examples = helpers.flatten_list([self._get_examples_metadate(f) for f in folders])
         if equalize_labels:
             examples = eq.equalize(examples, key_fn=lambda e: e[2], distribution={ key: 1 for key in label_map })
-        random.shuffle(examples)
+        random.Random(0).shuffle(examples)
         self._examples = examples
 
     @property

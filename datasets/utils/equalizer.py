@@ -28,7 +28,7 @@ def equalize(data, key_fn, distribution):
         else:
             take = len(class_items)
 
-        random.shuffle(class_items)
+        random.Random(0).shuffle(class_items)
         equalized.extend(class_items[:take])
 
     return equalized

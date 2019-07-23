@@ -59,7 +59,7 @@ class CardianExamplesGenerator(BaseExamplesGenerator):
             class_metadata = [m for m in metadata if m.label == label]
 
             source_ids = list(set(m.source_id for m in class_metadata))
-            random.shuffle(source_ids)
+            random.Random(0).shuffle(source_ids)
             class_metadata = [[m for m in metadata if m.source_id == source_id] for source_id in source_ids]
             class_metadata = helpers.flatten_list(class_metadata)
 
