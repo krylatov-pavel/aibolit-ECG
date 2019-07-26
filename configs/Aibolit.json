@@ -1,21 +1,19 @@
 {
     "model": {
-        "name": "models.aibolit.cnn_1440_5l_9k.CNN",
+        "name": "models.aibolit.densenet.CNN",
         "hparams": {
             "optimizer": {
                 "type": "adam",
                 "params": {
-                    "lr": 0.005393,
-                    "weight_decay": 0.00016
+                    "lr": 0.0001,
+                    "weight_decay": 0.000001
                 }
             },
-            "dropout": 0.3973,
             "train_batch_size": 32,
             "eval_batch_size": 100,
-            "filters_num": 60,
-            "fc_units": 45,
-            "fc_layers": 3,
-            "activation_fn": "torch.nn.ReLU"
+            "growth_rate": 12,
+            "compression": 0.5,
+            "kernel_size": 9
         }
     },
     "dataset": {
@@ -23,7 +21,8 @@
         "examples_provider": "datasets.common.h5_examples_provider.H5ExamplesProvider",
         "params": {
             "example_duration": 4,
-            "example_fs": 360,
+            "seed": 100,
+            "example_fs": 500,
             "class_settings": {
                 "N": {
                     "label_map": 0,
@@ -63,47 +62,57 @@
                 0.2
             ],
             "test_set_size": 0,
-            "normalize_input": true
+            "normalize_input": false
         },
-        "sources": [{
-            "name": "aibolit",
-            "examples_generator": "datasets.aibolit.cardian_examples_generator.CardianExamplesGenerator",
-            "fs": 1000,
-            "class_settings": {
-                "CLC": {
-                    "rhythm": "clc",
-                    "overlap": 0.75
-                },
-                "PVC": {
-                    "rhythm": "pvc",
-                    "overlap": 0.75
-                },
-                "R": {
-                    "rhythm": "r",
-                    "overlap": 0.7
-                },
-                "AFIB": {
-                    "rhythm": "afib",
-                    "overlap": 0.5
-                },
-                "L": {
-                    "rhythm": "l",
-                    "overlap": 0.5
-                },
-                "AV": {
-                    "rhythm": "av",
-                    "overlap": 0.5
-                },
-                "AR": {
-                    "rhythm": "ar",
-                    "overlap": 0
-                },
-                "N": {
-                    "rhythm": "n",
-                    "overlap": 0
+        "sources": [
+            {
+                "name": "aibolit//dataset-standard",
+                "examples_generator": "datasets.aibolit.cardian_examples_generator.CardianExamplesGenerator",
+                "fs": 1000,
+                "class_settings": {
+                    "CLC": {
+                        "rhythm": "clc",
+                        "overlap": 0.75,
+                        "name": "CLC"
+                    },
+                    "PVC": {
+                        "rhythm": "pvc",
+                        "overlap": 0.75,
+                        "name": "PVC"
+                    },
+                    "R": {
+                        "rhythm": "r",
+                        "overlap": 0.7,
+                        "name": "R"
+                    },
+                    "AFIB": {
+                        "rhythm": "afib",
+                        "overlap": 0.5,
+                        "name": "AFIB"
+                    },
+                    "L": {
+                        "rhythm": "l",
+                        "overlap": 0.5,
+                        "name": "L"
+                    },
+                    "AV": {
+                        "rhythm": "av",
+                        "overlap": 0.5,
+                        "name": "AV"
+                    },
+                    "AR": {
+                        "rhythm": "ar",
+                        "overlap": 0,
+                        "name": "AR"
+                    },
+                    "N": {
+                        "rhythm": "n",
+                        "overlap": 0,
+                        "name": "N"
+                    }
                 }
             }
-        }]
+        ]
     },
     "max_epochs": 60,
     "keep_n_checkpoints": 4,
@@ -119,6 +128,6 @@
         "factor": 0.2,
         "patience": 4
     },
-    "params_space": "configs.hyperopt_spaces.aibolit_cnn.Space",
-    "iteration": "default"
+    "params_space": "configs.hyperopt_spaces.aibolit_densenet.Space",
+    "iteration": "1"
 }

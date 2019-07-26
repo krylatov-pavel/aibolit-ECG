@@ -25,6 +25,7 @@ def main():
         net = helpers.get_class(config.settings.model.name)(config.settings)
         dataset_generator = helpers.get_class(config.settings.dataset.dataset_generator)(config.settings.dataset.params, config.settings.dataset.sources)
         examples_provider_ctor = helpers.get_class(config.settings.dataset.examples_provider)
+        seed = config.settings.dataset.params.get("seed") or 0
         
         class_map = { val.label_map: key for key, val in config.settings.dataset.params.class_settings.items() }
         label_map = { val: key for key, val in class_map.items() }
@@ -52,7 +53,8 @@ def main():
             examples = examples_provider_ctor(
                 folders=dataset_generator.eval_set_path(),
                 label_map=label_map,
-                equalize_labels=True
+                equalize_labels=True,
+                seed=seed
             )
             eval_spec.dataset = Dataset(examples, transform=transform)
             model = Model.restore(net, config.model_dir, checkpoints)
@@ -63,7 +65,8 @@ def main():
                 examples = examples_provider_ctor(
                     folders=dataset_generator.eval_set_path(eval_fold_number=i),
                     label_map=label_map,
-                    equalize_labels=True
+                    equalize_labels=True,
+                    seed=seed
                 )
                 eval_spec.dataset = Dataset(examples, transform=transform)
                 model = Model.restore(net, os.path.join(config.model_dir, "fold_{}".format(i)), checkpoints[i])
