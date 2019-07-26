@@ -10,6 +10,7 @@ class BaseDatasetGenerator(object):
         self._split_ratio = params.split_ratio
         self._k = len(params.split_ratio) 
         self._test_set_size = params.test_set_size
+        self._seed = params.get("seed") or 0
 
         self._generators = { src.name: helpers.get_class(src.examples_generator)(params, src) for src in sources }
         self._class_distribution = { lbl: settings.equalize_distribution for lbl, settings in params.class_settings.items() }
@@ -67,9 +68,9 @@ class BaseDatasetGenerator(object):
             folders = {}
             if self._test_set_size:
                 folders["TEST"], examples_meta = self._split_examples(examples_meta, first_fraction=self._test_set_size)
-                folders["TEST"] = eq.equalize(folders["TEST"], key_fn=lambda m: m.label, distribution={key: 1 for key in self._class_distribution})
+                folders["TEST"] = eq.equalize(folders["TEST"], key_fn=lambda m: m.label, distribution={key: 1 for key in self._class_distribution}, seed=self._seed)
 
-            examples_meta = eq.equalize(examples_meta, key_fn=lambda m: m.label, distribution=self._class_distribution)
+            examples_meta = eq.equalize(examples_meta, key_fn=lambda m: m.label, distribution=self._class_distribution, seed=self._seed)
 
             for i in range(self._k - 1):
                 first_fraction = self._split_ratio[i] / sum(self._split_ratio[i:])

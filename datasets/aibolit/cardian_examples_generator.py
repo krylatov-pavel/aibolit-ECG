@@ -10,6 +10,7 @@ class CardianExamplesGenerator(BaseExamplesGenerator):
     def __init__(self, common_params, source_params):
         self._example_duration = common_params.example_duration
         self._resample_fs = common_params.example_fs
+        self._seed = common_params.get("seed") or 0
 
         self._fs = source_params.fs
         self._source_name = source_params.name
@@ -59,7 +60,7 @@ class CardianExamplesGenerator(BaseExamplesGenerator):
             class_metadata = [m for m in metadata if m.label == label]
 
             source_ids = list(set(m.source_id for m in class_metadata))
-            random.Random(0).shuffle(source_ids)
+            random.Random(self._seed).shuffle(source_ids)
             class_metadata = [[m for m in metadata if m.source_id == source_id] for source_id in source_ids]
             class_metadata = helpers.flatten_list(class_metadata)
 

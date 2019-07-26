@@ -24,12 +24,14 @@ def main():
         dataset_generator = get_class(config.settings.dataset.dataset_generator)(config.settings.dataset.params, config.settings.dataset.sources)
         examples_provider = get_class(config.settings.dataset.examples_provider)
         batch_size = config.settings.model.hparams.eval_batch_size
+        seed = config.settings.dataset.params.get("seed") or 0
         label_map = { lbl: c.label_map for lbl, c in config.settings.dataset.params.class_settings.items() }
         
         examples = examples_provider(
             folders=dataset_generator.test_set_path(),
             label_map=label_map,
-            equalize_labels=True
+            equalize_labels=True,
+            seed=seed
         )
 
         if config.settings.dataset.params.normalize_input:

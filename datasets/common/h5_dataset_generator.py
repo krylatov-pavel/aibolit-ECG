@@ -12,6 +12,7 @@ class H5DatasetGenerator(BaseDatasetGenerator):
 
         self._example_duration = params.example_duration
         self._fs = params.example_fs
+        self._seed = params.get("seed") or 0
 
     @property
     def examples_exists(self):
@@ -39,9 +40,10 @@ class H5DatasetGenerator(BaseDatasetGenerator):
     def _dataset_flavor(self):
         classes = ",".join(["{}{}".format("" if (not eq) or eq == 1 else eq, c)
             for c, eq in self._class_distribution.items()])
-        return "{}fold_{}s_({})_{}hz_h5".format(
+        return "{}fold_{}s_({})_{}hz_{}h5".format(
             self._k,
             self._example_duration,
             classes,
-            self._fs
+            self._fs,
+            "seed{}_".format(self._seed) if self._seed else ""
         )

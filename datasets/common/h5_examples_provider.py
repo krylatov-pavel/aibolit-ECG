@@ -4,10 +4,10 @@ import os
 from datasets.base.base_examples_provider import BaseExamplesProvider
 
 class H5ExamplesProvider(BaseExamplesProvider):
-    def __init__(self, folders, label_map, equalize_labels=False):
+    def __init__(self, folders, label_map, equalize_labels=False, seed=0):
         self._files = { f: h5py.File("{}.hdf5".format(f), "r") for f in folders }
         
-        super(H5ExamplesProvider, self).__init__(folders, label_map, equalize_labels)
+        super(H5ExamplesProvider, self).__init__(folders, label_map, equalize_labels, seed)
     
     def _read_data(self, folder, key):
         dset = self._files[folder][key][:]

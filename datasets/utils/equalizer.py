@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import random
 
-def equalize(data, key_fn, distribution):
+def equalize(data, key_fn, distribution, seed=0):
     """
     distribution: { 
         class1: equalize_distribution1,
@@ -28,7 +28,7 @@ def equalize(data, key_fn, distribution):
         else:
             take = len(class_items)
 
-        random.Random(0).shuffle(class_items)
+        random.Random(seed).shuffle(class_items)
         equalized.extend(class_items[:take])
 
     return equalized

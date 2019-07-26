@@ -26,6 +26,7 @@ class Experiment():
         self._config = config
         self._model_dir = model_dir
         self._k = len(config.dataset.params.split_ratio)
+        self._seed = config.dataset.params.get("seed") or 0
 
         self._optimizer = config.model.hparams.optimizer.type
         self._optimizer_params = config.model.hparams.optimizer.params
@@ -68,8 +69,9 @@ class Experiment():
             raise ValueError("invalid k")
 
         examples = self._examples_provider(
-            folders=self._dataset_generator.test_set_path(),
-            label_map=self._label_map
+            folders=self._dataset_generator.train_set_path(0),
+            label_map=self._label_map,
+            seed=self._seed
         )
 
         dataset = Dataset(examples)
@@ -109,7 +111,8 @@ class Experiment():
 
         train_examples = self._examples_provider(
             folders=self._dataset_generator.train_set_path(fold_num),
-            label_map=self._label_map
+            label_map=self._label_map,
+            seed=self._seed
         )
 
         train_spec = TrainSpec(
@@ -125,7 +128,8 @@ class Experiment():
         eval_examples = self._examples_provider(
             folders=self._dataset_generator.eval_set_path(fold_num),
             label_map=self._label_map,
-            equalize_labels=True
+            equalize_labels=True,
+            seed=self._seed
         )
 
         eval_spec = EvalSpec(
