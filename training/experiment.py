@@ -18,6 +18,18 @@ EVAL = "eval"
 def squeeze(x):
     return torch.squeeze(x, dim=0)
 
+def clip_fn(min, max):
+    def clip(x):
+        x = torch.clamp(x, min, max)
+        return x
+    return clip
+
+def scale_fn(min, max, a, b):
+    def scale(x):
+        x = ((b - a) * (x - min) / (max - min)) + a
+        return x
+    return scale
+
 class Experiment():
     def __init__(self, config, model_dir):
         self._dataset_generator = get_class(config.dataset.dataset_generator)(config.dataset.params, config.dataset.sources)
@@ -92,10 +104,13 @@ class Experiment():
         net = get_class(self._config.model.name)(self._config)
 
         if self._normalize_input:
-            mean, std = self._dataset_generator.stats
+            clip = clip_fn(-20, 20)
+            scale = scale_fn(-20, 20, 0, 5)
+
             transform = transforms.Compose([
                 transforms.ToTensor(),
-                transforms.Normalize(mean=[mean], std=[std]),
+                transforms.Lambda(clip),
+                transforms.Lambda(scale),
                 transforms.Lambda(squeeze)
             ])
         else:

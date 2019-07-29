@@ -1,19 +1,21 @@
 {
     "model": {
-        "name": "models.aibolit.densenet.CNN",
+        "name": "models.aibolit.densenet_dropout.CNN",
         "hparams": {
             "optimizer": {
                 "type": "adam",
                 "params": {
-                    "lr": 0.0001,
-                    "weight_decay": 0.000001
+                    "lr": 0.0007557584138874836,
+                    "weight_decay": 0.0003969897923152853
                 }
             },
             "train_batch_size": 32,
             "eval_batch_size": 100,
-            "growth_rate": 12,
-            "compression": 0.5,
-            "kernel_size": 9
+            "growth_rate": 8,
+            "compression": 0.3,
+            "kernel_size": 7,
+            "dropout": 0,
+            "bottleneck": false
         }
     },
     "dataset": {
@@ -62,7 +64,7 @@
                 0.2
             ],
             "test_set_size": 0,
-            "normalize_input": false
+            "normalize_input": true
         },
         "sources": [
             {
@@ -72,43 +74,35 @@
                 "class_settings": {
                     "CLC": {
                         "rhythm": "clc",
-                        "overlap": 0.75,
-                        "name": "CLC"
+                        "overlap": 0.75
                     },
                     "PVC": {
                         "rhythm": "pvc",
-                        "overlap": 0.75,
-                        "name": "PVC"
+                        "overlap": 0.75
                     },
                     "R": {
                         "rhythm": "r",
-                        "overlap": 0.7,
-                        "name": "R"
+                        "overlap": 0.7
                     },
                     "AFIB": {
                         "rhythm": "afib",
-                        "overlap": 0.5,
-                        "name": "AFIB"
+                        "overlap": 0.5
                     },
                     "L": {
                         "rhythm": "l",
-                        "overlap": 0.5,
-                        "name": "L"
+                        "overlap": 0.5
                     },
                     "AV": {
                         "rhythm": "av",
-                        "overlap": 0.5,
-                        "name": "AV"
+                        "overlap": 0.5
                     },
                     "AR": {
                         "rhythm": "ar",
-                        "overlap": 0,
-                        "name": "AR"
+                        "overlap": 0
                     },
                     "N": {
                         "rhythm": "n",
-                        "overlap": 0,
-                        "name": "N"
+                        "overlap": 0
                     }
                 }
             }
@@ -129,5 +123,5 @@
         "patience": 4
     },
     "params_space": "configs.hyperopt_spaces.aibolit_densenet.Space",
-    "iteration": "1"
+    "iteration": "5"
 }
