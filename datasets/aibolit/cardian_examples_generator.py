@@ -1,6 +1,7 @@
 import os
 import random
 import json
+import scipy.signal
 import utils.helpers as helpers
 from datasets.utils.ecg import ECG
 from datasets.utils.data_structures import ExampleMetadata, Example
@@ -19,6 +20,8 @@ class CardianExamplesGenerator(BaseExamplesGenerator):
         for name, c in source_params.class_settings.items():
             c.update({"name": name})
             self._rhythm_filter[c.rhythm] = c
+
+        self._median_filter = source_params.get("median_filter") or 0
     
     def get_examples_meta(self):
         ecgs = self.__ecg_generator()
@@ -37,6 +40,9 @@ class CardianExamplesGenerator(BaseExamplesGenerator):
 
             with open(fpath, "r") as json_file:
                 signal = json.load(json_file)
+                if self._median_filter:
+                    signal = scipy.signal.medfilt(signal, self._median_filter)
+
                 ecg = ECG(
                     source_type=self._source_name,
                     name=source_id,
