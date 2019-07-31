@@ -1,6 +1,7 @@
 {
     "model": {
         "name": "models.aibolit.cnn_generic_5l_9k.CNN",
+        "experiment": "8class_cnn_generic_5l_9k_2fold_dataset_standatd_seed_42",
         "hparams": {
             "optimizer": {
                 "type": "adam",
@@ -59,10 +60,7 @@
                 }
             },
             "split_ratio": [
-                0.2,
-                0.2,
-                0.2,
-                0.2,
+                0.8,
                 0.2
             ],
             "test_set_size": 0,
@@ -72,6 +70,7 @@
             "name": "aibolit\\dataset-standard",
             "examples_generator": "datasets.aibolit.cardian_examples_generator.CardianExamplesGenerator",
             "fs": 1000,
+            "seed": 42,
             "class_settings": {
                 "CLC": {
                     "rhythm": "clc",
