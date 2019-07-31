@@ -3,15 +3,12 @@ import os
 import torch.utils.data
 import onnxruntime as rt
 import numpy as np
+import utils.transforms as transforms
 from datasets.common.dataset import Dataset
 from training.metrics.confusion_matrix import ConfusionMatrix
 from utils.helpers import get_class
 from utils.config import Config 
 from torch.utils import data
-from torchvision import transforms
-
-def squeeze(x):
-    return torch.squeeze(x, dim=0)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -28,21 +25,16 @@ def main():
         label_map = { lbl: c.label_map for lbl, c in config.settings.dataset.params.class_settings.items() }
         
         examples = examples_provider(
-            folders=dataset_generator.test_set_path(),
+            folders=dataset_generator.eval_set_path(),
             label_map=label_map,
             equalize_labels=True,
             seed=seed
         )
 
         if config.settings.dataset.params.normalize_input:
-            mean, std = dataset_generator.stats
-            transform = transforms.Compose([
-                transforms.ToTensor(),
-                transforms.Normalize(mean=[mean], std=[std]),
-                transforms.Lambda(squeeze)
-            ])
+            transform = transforms.get_transform()
         else:
-            transform = None 
+            transform = None
 
         dataset = Dataset(examples, transform=transform)
         data_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False)

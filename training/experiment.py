@@ -2,11 +2,11 @@ import os
 import torch
 import torch.utils.data
 import time
-from torchvision import transforms
 import training.checkpoint as checkpoint
 import training.metrics.stats as stats
 from training.spec import TrainSpec, EvalSpec
 from training.model import Model
+import utils.transforms as transforms
 from utils.dirs import create_dirs
 from utils.helpers import get_class
 from models.common.ensemble import Ensemble
@@ -14,21 +14,6 @@ from datasets.common.dataset import Dataset
 
 TRAIN = "train"
 EVAL = "eval"
-
-def squeeze(x):
-    return torch.squeeze(x, dim=0)
-
-def clip_fn(min, max):
-    def clip(x):
-        x = torch.clamp(x, min, max)
-        return x
-    return clip
-
-def scale_fn(min, max, a, b):
-    def scale(x):
-        x = ((b - a) * (x - min) / (max - min)) + a
-        return x
-    return scale
 
 class Experiment():
     def __init__(self, config, model_dir):
@@ -104,15 +89,7 @@ class Experiment():
         net = get_class(self._config.model.name)(self._config)
 
         if self._normalize_input:
-            clip = clip_fn(-20, 20)
-            scale = scale_fn(-20, 20, 0, 5)
-
-            transform = transforms.Compose([
-                transforms.ToTensor(),
-                transforms.Lambda(clip),
-                transforms.Lambda(scale),
-                transforms.Lambda(squeeze)
-            ])
+            transform = transforms.get_transform()
         else:
             transform = None
 

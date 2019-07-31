@@ -2,16 +2,13 @@ import argparse
 import os
 import utils.helpers as helpers
 import torch
-from torchvision import transforms
+import utils.transforms as transforms
 from datasets.common.dataset import Dataset
 from utils.config import Config
 from training.spec import EvalSpec
 from training.model import Model
 import training.metrics.stats as stats
 from training.metrics.confusion_matrix import ConfusionMatrix
-
-def squeeze(x):
-    return torch.squeeze(x, dim=0)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -39,14 +36,9 @@ def main():
         _, checkpoints = stats.max_accuracy(config.model_dir, config.k)
 
         if config.settings.dataset.params.normalize_input:
-            mean, std = dataset_generator.stats
-            transform = transforms.Compose([
-                transforms.ToTensor(),
-                transforms.Normalize(mean=[mean], std=[std]),
-                transforms.Lambda(squeeze)
-            ])
+            transform = transforms.get_transform()
         else:
-            transform = None 
+            transform = None
         
         confusion_mtrx = ConfusionMatrix([], [], config.class_num)
         if config.k == 2:
