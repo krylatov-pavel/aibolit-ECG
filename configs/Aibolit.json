@@ -24,7 +24,7 @@
         "examples_provider": "datasets.common.h5_examples_provider.H5ExamplesProvider",
         "params": {
             "example_duration": 3.8,
-            "seed": 42,
+            "seed": 44,
             "example_fs": 250,
             "class_settings": {
                 "N": {
@@ -69,6 +69,7 @@
                 "examples_generator": "datasets.aibolit.cardian_examples_generator.CardianExamplesGenerator",
                 "fs": 1000,
                 "median_filter": 25,
+                "filter_records": true,
                 "class_settings": {
                     "PVC": {
                         "rhythm": "pvc",

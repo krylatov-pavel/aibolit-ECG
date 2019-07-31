@@ -16,13 +16,13 @@ class CNN(nn.Module):
         growth_rate = int(config.model.hparams["growth_rate"])
         kernel_size = int(config.model.hparams["kernel_size"])
         compression = config.model.hparams["compression"]
+        depth = config.model.hparams.get("depth")
         dropout = config.model.hparams.get("dropout")
         bottleneck = config.model.hparams.get("bottleneck") or False
 
         #layers
         shape = DataShape1d(1, input_size)
-        #dense_depth = [6, 12, 8]
-        dense_depth = [6, 12, 24, 8]
+        dense_depth = [depth] * 3
         self.layers = nn.ModuleList()
                 
         #initial convolution

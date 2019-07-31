@@ -3,6 +3,9 @@ import random
 import json
 import scipy.signal
 import utils.helpers as helpers
+import utils.dirs as dirs
+import shutil 
+import numpy as np
 from datasets.utils.ecg import ECG
 from datasets.utils.data_structures import ExampleMetadata, Example
 from datasets.base.base_examples_generator import BaseExamplesGenerator
@@ -22,10 +25,12 @@ class CardianExamplesGenerator(BaseExamplesGenerator):
             self._rhythm_filter[c.rhythm] = c
 
         self._median_filter = source_params.get("median_filter") or 0
-    
-    def get_examples_meta(self):
-        ecgs = self.__ecg_generator()
+        self._filter_records = source_params.get("filter_records") or False
 
+    def get_examples_meta(self):
+        ecgs, invalid_ecgs = self.__get_filtered_ecgs(self._filter_records)
+
+        self.__save_invalid_ecgs(invalid_ecgs)
         metadata = [e.get_examples_metadata(self._example_duration, self._class_settings) for e in ecgs]
         metadata = helpers.flatten_list(metadata)
 
@@ -105,6 +110,45 @@ class CardianExamplesGenerator(BaseExamplesGenerator):
             return split_point, found
     
     ###
+    def __get_filtered_ecgs(self, filter=False):
+        path = os.path.join("data", "database", self._source_name) 
+
+        dirs = (os.path.join(path, d) for d in os.listdir(path))
+        dirs = (d for d in dirs if os.path.isdir(d))
+
+        ecgs = []
+        invalid_ecgs = []
+
+        for d in dirs:
+            rhythm = os.path.basename(d)
+
+            if rhythm in self._rhythm_filter:
+                label = self._rhythm_filter[rhythm].name
+
+                files = (os.path.join(d, f) for f in os.listdir(d))
+                files = (f for f in files if os.path.isfile(f) and os.path.splitext(f)[1].lower() == ".json")
+                for f in files:
+                    with open(f, "r") as json_file:
+                        signal = json.load(json_file)
+
+                        if filter:
+                            smoothed = scipy.signal.medfilt(signal, 191)
+                            amplitude = np.max(smoothed) - np.min(smoothed)
+                            if amplitude > 10:
+                                invalid_ecgs.append(f)
+                                continue
+
+                        ecg = ECG(
+                            source_type=self._source_name,
+                            name=os.path.splitext(os.path.basename(f))[0],
+                            labels=[label],
+                            timecodes=[0],
+                            fs=self._fs,
+                            signal_len = len(signal)
+                        )
+                        ecgs.append(ecg)
+
+        return ecgs, invalid_ecgs
 
     def __ecg_generator(self):
         path = os.path.join("data", "database", self._source_name) 
@@ -132,3 +176,12 @@ class CardianExamplesGenerator(BaseExamplesGenerator):
                             signal_len = len(signal)
                         )
                         yield ecg
+
+    def __save_invalid_ecgs(self, files):
+        skipped_dir = os.path.join("data", "database", self._source_name, "skipped")
+        dirs.clear_dir(skipped_dir)
+        for fpath in files:
+            dirname = os.path.basename(os.path.dirname(fpath))
+            dst = os.path.join(skipped_dir, dirname)
+            dirs.create_dirs([dst])
+            shutil.copy(fpath, dst)
