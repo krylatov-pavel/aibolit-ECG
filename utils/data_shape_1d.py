@@ -1,3 +1,5 @@
+import math
+
 class DataShape1d(object):
     def __init__(self, channels, length):
         self._channels = channels
@@ -6,6 +8,10 @@ class DataShape1d(object):
     @property
     def channels(self):
         return self._channels
+
+    @property
+    def length(self):
+        return self._length
 
     @property
     def size(self):
@@ -43,13 +49,34 @@ class DataShape1d(object):
         self._channels = 1
         self._length = output_size
 
-    def suggest_padding(self, kernel_size, stride):
-        remainder = (self._length - kernel_size) % stride
+    def dense_block(self, depth, growth_rate):
+        self._channels += depth * growth_rate
 
-        if remainder == 0:
-            return None
+    def transition_layer(self, output_size, padding=None):
+        padding = sum(padding or [0, 0])
+
+        self._length += padding
+
+        self._channels = output_size
+        
+        if self._length % 2:
+            print("Transition layer warning: input length supposed to be even")
+        self._length //= 2
+
+    def suggest_padding(self, kernel_size, stride, output_length=None):
+        if output_length:
+            pad = (output_length - 1) * stride - self._length + kernel_size
         else:
-            pad = stride - remainder
+            remainder = (self._length - kernel_size) % stride
+            if remainder == 0:
+                pad = 0
+            else:
+                pad = stride - remainder
+
+        if pad:
             pad_left = pad // 2
             pad_right = pad - pad_left
+
             return (pad_left, pad_right)
+        else:
+            return None
