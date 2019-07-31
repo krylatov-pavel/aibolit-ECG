@@ -1,20 +1,21 @@
 {
     "model": {
-        "name": "models.aibolit.densenet_dropout.CNN",
+        "name": "models.aibolit.densenet_dropout_250Hz.CNN",
         "hparams": {
             "optimizer": {
                 "type": "adam",
                 "params": {
-                    "lr": 0.0007557584138874836,
-                    "weight_decay": 0.0003969897923152853
+                    "lr": 0.0005016975594009279,
+                    "weight_decay": 0.0001242572411070902
                 }
             },
             "train_batch_size": 32,
             "eval_batch_size": 100,
-            "growth_rate": 8,
+            "growth_rate": 12,
             "compression": 0.3,
-            "kernel_size": 7,
-            "dropout": 0,
+            "kernel_size": 5,
+            "dropout": 0.1,
+            "depth": 9,
             "bottleneck": false
         }
     },
@@ -22,9 +23,9 @@
         "dataset_generator": "datasets.common.h5_dataset_generator.H5DatasetGenerator",
         "examples_provider": "datasets.common.h5_examples_provider.H5ExamplesProvider",
         "params": {
-            "example_duration": 4,
-            "seed": 100,
-            "example_fs": 500,
+            "example_duration": 3.8,
+            "seed": 42,
+            "example_fs": 250,
             "class_settings": {
                 "N": {
                     "label_map": 0,
@@ -53,10 +54,6 @@
                 "PVC": {
                     "label_map": 6,
                     "equalize_distribution": false
-                },
-                "CLC": {
-                    "label_map": 7,
-                    "equalize_distribution": false
                 }
             },
             "split_ratio": [
@@ -68,41 +65,45 @@
         },
         "sources": [
             {
-                "name": "aibolit//dataset-standard",
+                "name": "aibolit//dataset-without-clc",
                 "examples_generator": "datasets.aibolit.cardian_examples_generator.CardianExamplesGenerator",
                 "fs": 1000,
+                "median_filter": 25,
                 "class_settings": {
-                    "CLC": {
-                        "rhythm": "clc",
-                        "overlap": 0.75
-                    },
                     "PVC": {
                         "rhythm": "pvc",
-                        "overlap": 0.75
+                        "overlap": 0.825,
+                        "name": "PVC"
                     },
                     "R": {
                         "rhythm": "r",
-                        "overlap": 0.7
+                        "overlap": 0.7,
+                        "name": "R"
                     },
                     "AFIB": {
                         "rhythm": "afib",
-                        "overlap": 0.5
+                        "overlap": 0.5,
+                        "name": "AFIB"
                     },
                     "L": {
                         "rhythm": "l",
-                        "overlap": 0.5
+                        "overlap": 0.5,
+                        "name": "L"
                     },
                     "AV": {
                         "rhythm": "av",
-                        "overlap": 0.5
+                        "overlap": 0.5,
+                        "name": "AV"
                     },
                     "AR": {
                         "rhythm": "ar",
-                        "overlap": 0
+                        "overlap": 0,
+                        "name": "AR"
                     },
                     "N": {
                         "rhythm": "n",
-                        "overlap": 0
+                        "overlap": 0,
+                        "name": "N"
                     }
                 }
             }
@@ -123,5 +124,5 @@
         "patience": 4
     },
     "params_space": "configs.hyperopt_spaces.aibolit_densenet.Space",
-    "iteration": "5"
+    "iteration": "48"
 }
