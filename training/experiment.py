@@ -78,7 +78,7 @@ class Experiment():
         net.eval()
         net.to("cpu")
         with torch.no_grad():
-            torch.onnx.export(net, x, os.path.join(self._model_dir, "model.onnx"))
+            torch.onnx.export(net, x, os.path.join(self._model_dir, "model.onnx"), do_constant_folding=True)
 
     def plot_metrics(self):
         stats.plot_metrics(self._model_dir, self._k)

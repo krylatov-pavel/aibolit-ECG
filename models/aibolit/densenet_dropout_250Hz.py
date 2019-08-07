@@ -4,6 +4,8 @@ import torch.nn as nn
 import math
 from utils.data_shape_1d import DataShape1d
 
+bn_epsilon = 2e-05
+
 class CNN(nn.Module):
     def __init__(self, config):
         super(CNN, self).__init__()
@@ -29,7 +31,7 @@ class CNN(nn.Module):
         filters = 2 * growth_rate
         padding = (kernel_size - 1) // 2
         self.layers.append(nn.Conv1d(1, filters, kernel_size, padding=padding, bias=False))
-        self.layers.append(nn.BatchNorm1d(filters))
+        self.layers.append(nn.BatchNorm1d(filters, eps=bn_epsilon))
         self.layers.append(nn.ReLU())
         shape.conv(filters, kernel_size, padding=(padding, padding))
 
@@ -53,7 +55,7 @@ class CNN(nn.Module):
                 shape.transition_layer(output_channels, padding)
         
         #final pool
-        self.layers.append(nn.BatchNorm1d(shape.channels))
+        self.layers.append(nn.BatchNorm1d(shape.channels, eps=bn_epsilon))
         self.layers.append(nn.ReLU())
         pool_size = shape.length
         self.layers.append(nn.AvgPool1d(pool_size, pool_size))
@@ -79,11 +81,11 @@ class BottleneckLayer(nn.Module):
         intermediate_channels = 4 * growth_rate
         padding = (kernel_size - 1) // 2
         
-        self.conv1_bn = nn.BatchNorm1d(input_channels)
+        self.conv1_bn = nn.BatchNorm1d(input_channels, eps=bn_epsilon)
         self.conv1 = nn.Conv1d(input_channels, intermediate_channels, 1, bias=False)
         self.conv1_drop = nn.Dropout(dropout) if dropout else None
 
-        self.conv2_bn = nn.BatchNorm1d(intermediate_channels)
+        self.conv2_bn = nn.BatchNorm1d(intermediate_channels, eps=bn_epsilon)
         self.conv2 = nn.Conv1d(intermediate_channels, growth_rate, kernel_size, padding=padding, bias=False)
         self.conv2_drop = nn.Dropout(dropout) if dropout else None
 
@@ -110,7 +112,7 @@ class SingleLayer(nn.Module):
 
         padding = (kernel_size - 1) // 2
         
-        self.conv_bn = nn.BatchNorm1d(input_channels)
+        self.conv_bn = nn.BatchNorm1d(input_channels, eps=bn_epsilon)
         self.conv = nn.Conv1d(input_channels, growth_rate, kernel_size, padding=padding, bias=False)
         self.conv_drop = nn.Dropout(dropout) if dropout else None
 
@@ -147,7 +149,7 @@ class TransitionLayer(nn.Module):
     def __init__(self, input_channels, out_channels, pool_pad=None):
         super(TransitionLayer, self).__init__()
 
-        self.bn = nn.BatchNorm1d(input_channels)
+        self.bn = nn.BatchNorm1d(input_channels, eps=bn_epsilon)
         self.conv = nn.Conv1d(input_channels, out_channels, 1, bias=False)
         self.pool_pad = nn.ConstantPad1d(pool_pad, 0) if pool_pad else None
         self.pool = nn.AvgPool1d(2, 2)

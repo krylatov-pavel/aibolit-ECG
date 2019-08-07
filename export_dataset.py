@@ -1,6 +1,9 @@
 import argparse
 import os
 import numpy as np
+import torch
+import utils.transforms as transforms
+from datasets.common.dataset import Dataset
 from utils.config import Config
 from utils.helpers import get_class
 import codecs, json 
@@ -14,15 +17,33 @@ def main():
     if args.config:
         config = Config(args.config)
 
-        examples_provider = get_class(config.settings.dataset.provider)(config.settings.dataset.params)
+        dataset_generator = get_class(config.settings.dataset.dataset_generator)(config.settings.dataset.params, config.settings.dataset.sources)
+        examples_provider = get_class(config.settings.dataset.examples_provider)
+        batch_size = config.settings.model.hparams.eval_batch_size
+        seed = config.settings.dataset.params.get("seed") or 0
+        label_map = { lbl: c.label_map for lbl, c in config.settings.dataset.params.class_settings.items() }
+        
+        examples = examples_provider(
+            folders=dataset_generator.eval_set_path(),
+            label_map=label_map,
+            equalize_labels=True,
+            seed=seed
+        )
+
+        if config.settings.dataset.params.normalize_input:
+            transform = transforms.get_transform()
+        else:
+            transform = None
+
+        dataset = Dataset(examples, transform=transform)
+        data_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False)
 
         X = []
         Y = []
-        all_folds = list(range(len(config.settings.dataset.params.split_ratio)))
-        for i in range(examples_provider.len(all_folds)):
-            x, y = examples_provider.get_example(i, all_folds, False)
-            X.append(x.tolist())
-            Y.append(y)
+        for i, data in enumerate(data_loader):
+            x, labels = data
+            X.extend(x.numpy().tolist())
+            Y.extend(labels.numpy().tolist())
 
         file_path = os.path.join(args.path, "x.json")   ## your path variable
         json.dump(X, codecs.open(file_path, 'w', encoding='utf-8'), separators=(',', ':'), sort_keys=True, indent=4)
