@@ -17,8 +17,8 @@ def scale_fn(min, max, a, b):
     return scale
 
 def get_transform():
-    clip = clip_fn(-8.5, 9.5)
-    scale = scale_fn(-8.5, 9.5, 0, 5)
+    clip = clip_fn(-19, 21)
+    scale = scale_fn(-19, 21, 0, 5)
 
     transform = transforms.Compose([
         transforms.ToTensor(),
@@ -28,4 +28,3 @@ def get_transform():
     ])
 
     return transform
-

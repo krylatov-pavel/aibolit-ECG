@@ -42,10 +42,14 @@ def dataset_data(root, folds, fs):
                 label = f[example].attrs["label"].decode("utf-8")
                 signal = f[example][:]
                 duration = len(signal) / fs
+                duration_clipped = len(list(filter(lambda s: s > 21, signal))) / fs
+                duration_low = len(list(filter(lambda s: s < -19, signal))) / fs
                 
                 fold_data[i] = {
                     "label": label,
-                    "duration": duration
+                    "duration": duration,
+                    "duration_clipped": duration_clipped,
+                    "duration_low": duration_low
                 }
             
             data.extend(fold_data)
@@ -88,8 +92,17 @@ def main():
                 [str(i) for i in range(config.k)],
                 config.settings.dataset.params.get("example_fs")
             )
+
+            duration_total = ds.duration.sum() 
+            duration_clip =  ds.duration_clipped.sum() 
+            duration_low = ds.duration_low.sum()
+            print("above 20 sigma: {:.3f}".format((duration_clip / duration_total) * 100))
+            print("below -20 sigma: {:.3f}".format((duration_low / duration_total) * 100))
+
             ds = relative_duration(ds)
             print(ds)
+
+
         
     else:
         print("configuration file name is required. use -h for help")
