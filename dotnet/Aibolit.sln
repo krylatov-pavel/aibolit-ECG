@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.26228.4
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECGPreprocess", "ECGPreprocessor\ECGPreprocess.csproj", "{9C0B04B4-2B3C-4BAA-9C66-D2FEC295DFA4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECGPreprocess.Tests", "ECGPreprocess.Tests\ECGPreprocess.Tests.csproj", "{065DD64F-C563-4E0D-BAF0-22489FC838F5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9C0B04B4-2B3C-4BAA-9C66-D2FEC295DFA4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9C0B04B4-2B3C-4BAA-9C66-D2FEC295DFA4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9C0B04B4-2B3C-4BAA-9C66-D2FEC295DFA4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9C0B04B4-2B3C-4BAA-9C66-D2FEC295DFA4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{065DD64F-C563-4E0D-BAF0-22489FC838F5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{065DD64F-C563-4E0D-BAF0-22489FC838F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{065DD64F-C563-4E0D-BAF0-22489FC838F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{065DD64F-C563-4E0D-BAF0-22489FC838F5}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
