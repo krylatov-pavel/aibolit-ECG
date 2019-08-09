@@ -53,10 +53,18 @@
   <ItemGroup>
     <Compile Include="MedianFilter1dTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Clamp1dTest.cs" />
+    <Compile Include="Scale1dTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="TestData\result_clamp_-0.3-1.6_1000Hz_1s.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="TestData\result_medfilter_25_1000Hz_1s.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="TestData\result_scale_-0.3-1.6_0-1_1000Hz_1s.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="TestData\source_1000Hz_1s.json">
