@@ -2,6 +2,7 @@
 using System.IO;
 using Newtonsoft.Json;
 using ECGPreprocess.Transforms;
+using ECGPreprocess.Helpers;
 
 namespace ECGPreprocess.Tests
 {
@@ -36,6 +37,20 @@ namespace ECGPreprocess.Tests
 
             //Assert
             CollectionAssert.AreEqual(target, result);
+        }
+
+        [TestMethod]
+        public void Finds_Median()
+        {
+            //Arrange
+            var arr = new int[] { 9, 8, 7, 6, 5, 4, 3, 2, 1 };
+            var expected = 5;
+
+            //Act
+            var median = arr.Median();
+
+            //Assert
+            Assert.AreEqual(expected, median);
         }
     }
 }

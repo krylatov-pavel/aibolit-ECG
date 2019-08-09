@@ -12,8 +12,9 @@ namespace ECGPreprocess.Helpers
             if (array.Length % 2 == 1)
             {
                 int medianIdx = array.Length / 2;
-
-                return QuickSelect<T>(array, medianIdx);
+                var arrayCopy = (T[])array.Clone();
+                                    
+                return QuickSelect(arrayCopy, 0, arrayCopy.Length - 1, medianIdx);
             }
             else
             {
@@ -21,41 +22,55 @@ namespace ECGPreprocess.Helpers
             }
         }
 
-        private static T QuickSelect<T>(T[] array, int k) where T : IComparable<T>
+        private static void Swap<T>(T[] array, int i, int j)
         {
+            var buf = array[i];
+            array[i] = array[j];
+            array[j] = buf;
+        }
 
-            if (array.Length == 1)
+        private static int Partition<T>(T[] array, int left, int right, int pivotIdx) where T : IComparable<T>
+        {
+            var pivot = array[pivotIdx];
+            Swap(array, pivotIdx, right);
+
+            pivotIdx = left;
+
+            for(var i = left; i < right; i++)
             {
-                if (k == 0)
+                if (array[i].CompareTo(pivot) <= 0)
                 {
-                    return array[0];
+                    Swap(array, i, pivotIdx);
+                    pivotIdx++;
                 }
-                else
-                {
-                    throw new ArgumentOutOfRangeException("Something's wrong with algorithm implementation");
-                }
+            }
+
+            Swap(array, pivotIdx, right);
+
+            return pivotIdx;
+        }
+
+        private static T QuickSelect<T>(T[] array, int left, int right, int k) where T : IComparable<T>
+        {
+            if (left == right)
+            {
+                return array[left];
+            }
+
+            var pivotIdx = new Random().Next(left, right);
+            pivotIdx = Partition(array, left, right, pivotIdx);
+
+            if (pivotIdx == k)
+            {
+                return array[pivotIdx];
+            }
+            else if (pivotIdx > k)
+            {
+                return QuickSelect(array, left, pivotIdx - 1, k);
             }
             else
             {
-                Random rnd = new Random();
-                T pivot = array[rnd.Next(array.Length)];
-
-                IEnumerable<T> less = array.Where(e => e.CompareTo(pivot) < 0);
-                IEnumerable<T> pivots = array.Where(e => e.Equals(pivot));
-                IEnumerable<T> greater = array.Where(e => e.CompareTo(pivot) > 0);
-
-                if (k < less.Count())
-                {
-                    return QuickSelect(less.ToArray(), k);
-                }
-                if (k < less.Count() + pivots.Count())
-                {
-                    return pivots.First();
-                }
-                else
-                {
-                    return QuickSelect(greater.ToArray(), k - less.Count() - pivots.Count());
-                }
+                return QuickSelect(array, pivotIdx + 1, right, k);
             }
 
         }
