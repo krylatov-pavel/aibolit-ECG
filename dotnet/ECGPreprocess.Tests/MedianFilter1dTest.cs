@@ -29,7 +29,7 @@ namespace ECGPreprocess.Tests
                 target = JsonConvert.DeserializeObject<double[]>(json);
             }
 
-            var filter = new MedianFilter1d(25);
+            var filter = new MedianFilter1d<double>(25);
 
             //Act
             var result = filter.Transform(source);

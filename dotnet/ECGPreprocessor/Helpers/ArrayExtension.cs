@@ -11,9 +11,9 @@ namespace ECGPreprocess.Helpers
         {
             if (array.Length % 2 == 1)
             {
-                int median_idx = array.Length / 2;
+                int medianIdx = array.Length / 2;
 
-                return QuickSelect<T>(array, median_idx);
+                return QuickSelect<T>(array, medianIdx);
             }
             else
             {

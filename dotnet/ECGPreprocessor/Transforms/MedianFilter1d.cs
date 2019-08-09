@@ -3,15 +3,15 @@ using System;
 
 namespace ECGPreprocess.Transforms
 {
-    public class MedianFilter1d : ITransform1d
+    public class MedianFilter1d<T> : ITransform1d<T> where T: IComparable<T>
     {
-        private int kernel_size;
+        private int kernelSize;
 
-        public MedianFilter1d(int kernel_size)
+        public MedianFilter1d(int kernelSize)
         {
-            if (kernel_size % 2 != 0)
+            if (kernelSize % 2 != 0)
             {
-                this.kernel_size = kernel_size;
+                this.kernelSize = kernelSize;
             }
             else
             {
@@ -19,19 +19,19 @@ namespace ECGPreprocess.Transforms
             }
         } 
 
-        public double[] Transform(double[] x)
+        public T[] Transform(T[] x)
         {
-            double[] result = new double[x.Length];
+            T[] result = new T[x.Length];
 
-            int pad = this.kernel_size / 2;
-            double[] x_zero_padded = new double[x.Length + pad * 2];
-            Array.Copy(x, 0, x_zero_padded, pad, x.Length);
+            int pad = this.kernelSize / 2;
+            var xZeroPadded = new T[x.Length + pad * 2];
+            Array.Copy(x, 0, xZeroPadded, pad, x.Length);
 
-            double[] sliding_kernel = new double[this.kernel_size];
-            for (int i=0; i < x.Length; i++)
+            var slidingKernel = new T[this.kernelSize];
+            for (var i = 0; i < x.Length; i++)
             {
-                Array.Copy(x_zero_padded, i, sliding_kernel, 0, this.kernel_size);
-                result[i] = sliding_kernel.Median();
+                Array.Copy(xZeroPadded, i, slidingKernel, 0, this.kernelSize);
+                result[i] = slidingKernel.Median();
             }
 
             return result;

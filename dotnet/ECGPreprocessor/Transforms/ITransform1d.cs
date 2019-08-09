@@ -1,7 +1,9 @@
-﻿namespace ECGPreprocess.Transforms
+﻿using System;
+
+namespace ECGPreprocess.Transforms
 {
-    public interface ITransform1d
+    public interface ITransform1d<T> where T: IComparable<T>
     {
-        double[] Transform(double[] x);
+        T[] Transform(T[] x);
     }
 }
