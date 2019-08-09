@@ -15,7 +15,7 @@ namespace ECGPreprocess.Transforms
             }
             else
             {
-                throw new ArgumentException("kernel_size must be odd number", "kernel_size");
+                throw new ArgumentException("kernel_size must be odd number", "kernelSize");
             }
         } 
 
@@ -24,13 +24,18 @@ namespace ECGPreprocess.Transforms
             T[] result = new T[x.Length];
 
             int pad = this.kernelSize / 2;
-            var xZeroPadded = new T[x.Length + pad * 2];
-            Array.Copy(x, 0, xZeroPadded, pad, x.Length);
 
             var slidingKernel = new T[this.kernelSize];
             for (var i = 0; i < x.Length; i++)
             {
-                Array.Copy(xZeroPadded, i, slidingKernel, 0, this.kernelSize);
+                Array.Clear(slidingKernel, 0, slidingKernel.Length);
+
+                //zero pad sliding kernel on edges
+                var sourceIdx = Math.Max(i - pad, 0);
+                var destinationIdx = Math.Max(pad - i, 0);
+                var length = this.kernelSize - destinationIdx - Math.Max(pad - (x.Length - 1 - i), 0);
+                Array.Copy(x, sourceIdx, slidingKernel, destinationIdx, length);
+
                 result[i] = slidingKernel.Median();
             }
 
