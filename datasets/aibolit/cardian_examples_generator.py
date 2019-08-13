@@ -31,7 +31,7 @@ class CardianExamplesGenerator(BaseExamplesGenerator):
 
         metadata = [e.get_examples_metadata(self._example_duration, self._class_settings) for e in ecgs]
         metadata = helpers.flatten_list(metadata)
-
+        
         return metadata
 
     def get_examples(self, source_id, metadata):
@@ -68,7 +68,7 @@ class CardianExamplesGenerator(BaseExamplesGenerator):
         for label in labels:
             class_metadata = [m for m in metadata if m.label == label]
 
-            source_ids = list(set(m.source_id for m in class_metadata))
+            source_ids = sorted(list(set(m.source_id for m in class_metadata)))
             random.Random(self._seed).shuffle(source_ids)
             class_metadata = [[m for m in metadata if m.source_id == source_id] for source_id in source_ids]
             class_metadata = helpers.flatten_list(class_metadata)
