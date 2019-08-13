@@ -2,7 +2,6 @@ import torch
 import torch.nn.functional as F
 import torch.nn as nn
 import math
-import models.common.preprocess as preprocess
 from utils.data_shape_1d import DataShape1d
 
 bn_epsilon = 2e-05
@@ -22,11 +21,6 @@ class CNN(nn.Module):
         depth = int(config.model.hparams.get("depth"))
         dropout = config.model.hparams.get("dropout")
         bottleneck = config.model.hparams.get("bottleneck") or False
-
-        #preprocess
-        self.preprocess = nn.Sequential(
-            preprocess.MedianFilter1d(25)
-        ) 
 
         #layers
         shape = DataShape1d(1, input_size)
@@ -71,8 +65,6 @@ class CNN(nn.Module):
         self.fc = nn.Linear(shape.size, class_num)
 
     def forward(self, x):
-        x = self.preprocess(x)
-
         for layer in self.layers:
             x = layer(x)
 
