@@ -13,6 +13,7 @@ import training.checkpoint as checkpoint
 from training.early_stopper import EarlyStopper
 from training.eval_scheduler import EvalScheduler
 from training.lr_scheduler import CustomReduceLROnPlateau
+import models.common.classifiers as classifiers
 
 def create_optimizer(optimizer_type, net_parameters, optimizer_params):
     if optimizer_type == "adam":
@@ -29,6 +30,15 @@ def create_lr_scheduler(optimizer, lr_scheduler_params):
         verbose=True,
         **lr_scheduler_params
     )
+
+def create_loss_fn(loss_fn_type, loss_fn_params):
+    loss_fn_type == loss_fn_type or "crossEntropy"
+    loss_fn_params = loss_fn_params or {}
+
+    if loss_fn_type == "crossEntropy":
+        return nn.CrossEntropyLoss(**loss_fn_params)
+    if loss_fn_type == "mse":
+        return nn.MSELoss(**loss_fn_params)
 
 class Model(object):
     def __init__(self, net, model_dir, device=None, curr_epoch=None, optimizer=None, lr_scheduler=None,
@@ -109,7 +119,7 @@ class Model(object):
             else:
                 self._eval_scheduler.re_init(**eval_spec.eval_scheduler_params)
             
-            loss_fn = nn.CrossEntropyLoss()
+            loss_fn = create_loss_fn(train_spec.loss_fn_type, train_spec.loss_fn_params)
             loss_acm = RunningAvg(0.0)
 
             self._net.to(self._device)
@@ -137,6 +147,10 @@ class Model(object):
                     if len(y) > 1:
                         self._optimizer.zero_grad()
                         predictions = self._net(inputs)
+
+                        if eval_spec.classifier_type == "oh_zero_based":
+                            y = classifiers.to_oh_zero_base(y, eval_spec.class_num)
+
                         loss = loss_fn(predictions, y)
                         loss.backward()
                         self._optimizer.step()
@@ -181,8 +195,10 @@ class Model(object):
     def evaluate(self, eval_spec):
         self._net.eval()
 
-        loss_fn = nn.CrossEntropyLoss()
+        loss_fn = create_loss_fn(eval_spec.loss_fn_type, eval_spec.loss_fn_params)
         loss_acm = RunningAvg(0.0)
+        classifier = classifiers.create(eval_spec.classifier_type, eval_spec.classifier_params)
+        classifier.to(self._device)
 
         cm = ConfusionMatrix([], [], eval_spec.class_num)
 
@@ -191,10 +207,16 @@ class Model(object):
             inputs, y = batch[0].to(self._device), batch[1].to(self._device)
             with torch.no_grad():
                 predictions = self._net(inputs)
-                loss = loss_fn(predictions, y)
-                loss_acm.next_iteration(loss.item())
                 
-                _, predictions = torch.max(predictions, 1)
+                if eval_spec.classifier_type == "oh_zero_based":
+                    y_oh = classifiers.to_oh_zero_base(y, eval_spec.class_num)
+                    loss = loss_fn(predictions, y_oh)
+                else:
+                    loss = loss_fn(predictions, y)
+                loss_acm.next_iteration(loss.item())
+
+                predictions = classifier(predictions)
+
                 cm.append(predictions.cpu().numpy(), y.cpu().numpy())
 
         metrics = { 

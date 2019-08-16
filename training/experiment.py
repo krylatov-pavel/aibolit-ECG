@@ -39,6 +39,11 @@ class Experiment():
         self._eval_scheduler_params = config.eval_scheduler_params
         self._lr_scheduler_params = config.lr_scheduler_params
 
+        loss_fn = config.get("loss_fn") or {}
+        self._loss_fn_type = loss_fn.get("type")
+        self._loss_fn_params = loss_fn.get("params")
+        self._classifier_type = config.get("classifier")
+
     def run(self):
         #regular experiment
         if self._k == 2:
@@ -114,7 +119,9 @@ class Experiment():
             optimizer_type= self._optimizer,
             optimizer_params=self._optimizer_params,
             lr_scheduler_params=self._lr_scheduler_params,
-            early_stopper_params=self._early_stopper_params
+            early_stopper_params=self._early_stopper_params,
+            loss_fn_type=self._loss_fn_type,
+            loss_fn_params=self._loss_fn_params
         )
 
         eval_examples = self._examples_provider(
@@ -130,7 +137,13 @@ class Experiment():
             batch_size=100,
             eval_scheduler_params=self._eval_scheduler_params,
             class_map={value: key for key, value in self._label_map.items()},
-            keep_n_checkpoints=self._keep_n_checkpoints
+            keep_n_checkpoints=self._keep_n_checkpoints,
+            loss_fn_type=self._loss_fn_type,
+            loss_fn_params=self._loss_fn_params,
+            classifier_type=self._classifier_type,
+            classifier_params={
+                "label_map": self._label_map 
+            }
         )
         
         start = time.perf_counter()

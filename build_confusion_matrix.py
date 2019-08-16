@@ -26,11 +26,21 @@ def main():
         
         class_map = { val.label_map: key for key, val in config.settings.dataset.params.class_settings.items() }
         label_map = { val: key for key, val in class_map.items() }
+        loss_fn = config.settings.get("loss_fn") or {}
+        loss_fn_type = loss_fn.get("type")
+        loss_fn_params = loss_fn.get("params")
+        classifier_type = config.settings.get("classifier")
         eval_spec = EvalSpec(
             dataset=None,
             class_num=config.class_num,
             batch_size=50,
-            class_map=class_map
+            class_map=class_map,
+            loss_fn_type=loss_fn_type,
+            loss_fn_params=loss_fn_params,
+            classifier_type=classifier_type,
+            classifier_params={
+                "label_map": label_map 
+            }
         )
 
         _, checkpoints = stats.max_accuracy(config.model_dir, config.k)
