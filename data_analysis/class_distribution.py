@@ -42,8 +42,8 @@ def dataset_data(root, folds, fs):
                 label = f[example].attrs["label"].decode("utf-8")
                 signal = f[example][:]
                 duration = len(signal) / fs
-                duration_clipped = len(list(filter(lambda s: s > 21, signal))) / fs
-                duration_low = len(list(filter(lambda s: s < -19, signal))) / fs
+                duration_clipped = len(list(filter(lambda s: s > 5, signal))) / fs
+                duration_low = len(list(filter(lambda s: s < -4, signal))) / fs
                 
                 fold_data[i] = {
                     "label": label,

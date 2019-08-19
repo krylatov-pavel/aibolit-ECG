@@ -22,7 +22,7 @@ def to_oh_zero_base(y, class_num):
     return oh
 
 class IndexClassifier(nn.Module):
-    def __init__(self):
+    def __init__(self, label_map):
         super(IndexClassifier, self).__init__()
 
     def forward(self, x):
@@ -35,7 +35,7 @@ class OHZeroBasedClassifier(nn.Module):
         super(OHZeroBasedClassifier, self).__init__()
 
         self.class_num = len(label_map)
-        self.threshold = threshold or 0.24
+        self.threshold = threshold or 0.4
         self.classes = to_oh_zero_base(torch.tensor([idx for key, idx in label_map.items() if idx], dtype=torch.long), self.class_num)
 
     def forward(self, x):

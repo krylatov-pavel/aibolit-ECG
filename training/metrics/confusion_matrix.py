@@ -45,5 +45,6 @@ class ConfusionMatrix(object):
 
         plt.ylabel("Predicted")
         plt.xlabel("Actual")
+        plt.text(0, 0, "accuracy: {:.3f}".format(self.accuracy()))
 
         plt.savefig(fpath)

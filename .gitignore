@@ -28,7 +28,9 @@ build
 
 .ipynb_checkpoints
 *.ipynb
-data
+/data/*
+!/data/saved_models
+
 __pycache__
 .vscode/settings.json
 

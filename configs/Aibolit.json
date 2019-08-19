@@ -1,6 +1,7 @@
 {
     "model": {
         "name": "models.aibolit.densenet_dropout_250Hz.CNN",
+        "experiment": "7class_densenet_dropout_250Hz_2fold_stable_seed",
         "hparams": {
             "optimizer": {
                 "type": "adam",
@@ -24,7 +25,7 @@
         "examples_provider": "datasets.common.h5_examples_provider.H5ExamplesProvider",
         "params": {
             "example_duration": 3.8,
-            "seed": 42,
+            "seed": 6,
             "example_fs": 250,
             "class_settings": {
                 "N": {
@@ -68,7 +69,7 @@
                "name": "aibolit//dataset-without-clc",
                 "examples_generator": "datasets.aibolit.cardian_examples_generator.CardianExamplesGenerator",
                 "fs": 1000,
-                "median_filter": 25,
+                "median_filter": 19,
                 "class_settings": {
                     "PVC": {
                         "rhythm": "pvc",

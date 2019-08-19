@@ -1,6 +1,6 @@
 {
     "dataset": {
-        "dataset_provider": "datasets.MIT.vfdb.file_dataset_provider.FileDatasetProvider",
+        "dataset_provider": "datasets.MIT.vfdb.h5file_dataset_provider.H5FileDatasetProvider",
         "params": {
             "source_name": "vfdb",
             "bypass_cache": false,
@@ -18,8 +18,8 @@
                     "equalize_distribution": 1
                 },
                 {
-                    "name": "VF",
-                    "rhythm": "(VF",
+                    "name": "N",
+                    "rhythm": "(N",
                     "overlap": 0.493,
                     "equalize_distribution": 1
                 }

@@ -32,7 +32,7 @@ def create_lr_scheduler(optimizer, lr_scheduler_params):
     )
 
 def create_loss_fn(loss_fn_type, loss_fn_params):
-    loss_fn_type == loss_fn_type or "crossEntropy"
+    loss_fn_type = loss_fn_type or "crossEntropy"
     loss_fn_params = loss_fn_params or {}
 
     if loss_fn_type == "crossEntropy":
@@ -207,7 +207,7 @@ class Model(object):
             inputs, y = batch[0].to(self._device), batch[1].to(self._device)
             with torch.no_grad():
                 predictions = self._net(inputs)
-                
+
                 if eval_spec.classifier_type == "oh_zero_based":
                     y_oh = classifiers.to_oh_zero_base(y, eval_spec.class_num)
                     loss = loss_fn(predictions, y_oh)
