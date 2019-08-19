@@ -1,0 +1,128 @@
+{
+    "model": {
+        "name": "models.aibolit.densenet_dropout_250Hz.CNN",
+        "hparams": {
+            "optimizer": {
+                "type": "adam",
+                "params": {
+                    "lr": 0.0005720422351579999,
+                    "weight_decay": 0.00010256880229501246
+                }
+            },
+            "train_batch_size": 32,
+            "eval_batch_size": 100,
+            "growth_rate": 8.0,
+            "compression": 0.35000000000000003,
+            "kernel_size": 5,
+            "dropout": 0.2,
+            "depth": 11.0,
+            "bottleneck": false
+        }
+    },
+    "dataset": {
+        "dataset_generator": "datasets.common.h5_dataset_generator.H5DatasetGenerator",
+        "examples_provider": "datasets.common.h5_examples_provider.H5ExamplesProvider",
+        "params": {
+            "example_duration": 3.8,
+            "seed": 42,
+            "example_fs": 250,
+            "class_settings": {
+                "N": {
+                    "label_map": 0,
+                    "equalize_distribution": 1.4
+                },
+                "R": {
+                    "label_map": 1,
+                    "equalize_distribution": false
+                },
+                "AFIB": {
+                    "label_map": 2,
+                    "equalize_distribution": false
+                },
+                "L": {
+                    "label_map": 3,
+                    "equalize_distribution": false
+                },
+                "AV": {
+                    "label_map": 4,
+                    "equalize_distribution": 1
+                },
+                "AR": {
+                    "label_map": 5,
+                    "equalize_distribution": 1
+                },
+                "PVC": {
+                    "label_map": 6,
+                    "equalize_distribution": false
+                }
+            },
+            "split_ratio": [
+                0.8,
+                0.2
+            ],
+            "test_set_size": 0,
+            "normalize_input": true
+        },
+        "sources": [
+            {
+                "name": "aibolit//dataset-without-clc",
+                "examples_generator": "datasets.aibolit.cardian_examples_generator.CardianExamplesGenerator",
+                "fs": 1000,
+                "median_filter": 25,
+                "class_settings": {
+                    "PVC": {
+                        "rhythm": "pvc",
+                        "overlap": 0.825,
+                        "name": "PVC"
+                    },
+                    "R": {
+                        "rhythm": "r",
+                        "overlap": 0.7,
+                        "name": "R"
+                    },
+                    "AFIB": {
+                        "rhythm": "afib",
+                        "overlap": 0.5,
+                        "name": "AFIB"
+                    },
+                    "L": {
+                        "rhythm": "l",
+                        "overlap": 0.5,
+                        "name": "L"
+                    },
+                    "AV": {
+                        "rhythm": "av",
+                        "overlap": 0.5,
+                        "name": "AV"
+                    },
+                    "AR": {
+                        "rhythm": "ar",
+                        "overlap": 0,
+                        "name": "AR"
+                    },
+                    "N": {
+                        "rhythm": "n",
+                        "overlap": 0,
+                        "name": "N"
+                    }
+                }
+            }
+        ]
+    },
+    "max_epochs": 60,
+    "keep_n_checkpoints": 4,
+    "early_stopper_params": {
+        "patience": 8
+    },
+    "eval_scheduler_params": {
+        "interval": 3,
+        "decrease_step": 1,
+        "decrease_timeout": 15
+    },
+    "lr_scheduler_params": {
+        "factor": 0.2,
+        "patience": 4
+    },
+    "params_space": "configs.hyperopt_spaces.aibolit_densenet.Space",
+    "iteration": "34"
+}

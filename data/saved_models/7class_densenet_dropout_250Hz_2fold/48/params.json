@@ -1,0 +1,9 @@
+{
+    "model.hparams.bottleneck": false,
+    "model.hparams.compression": 0.30000000000000004,
+    "model.hparams.depth": 9.0,
+    "model.hparams.dropout": 0.1,
+    "model.hparams.growth_rate": 12.0,
+    "model.hparams.optimizer.params.lr": 0.0005016975594009279,
+    "model.hparams.optimizer.params.weight_decay": 0.0001242572411070902
+}

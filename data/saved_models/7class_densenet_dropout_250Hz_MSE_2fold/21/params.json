@@ -1,0 +1,8 @@
+{
+    "model.hparams.compression": 0.4,
+    "model.hparams.depth": 9.0,
+    "model.hparams.dropout": 0.15000000000000002,
+    "model.hparams.growth_rate": 16.0,
+    "model.hparams.optimizer.params.lr": 0.00045377603196018897,
+    "model.hparams.optimizer.params.weight_decay": 0.00020378273653239387
+}
